@@ -59,6 +59,13 @@ export {
   retry,
 } from './utils.js';
 
+// Export validation utilities
+export {
+  Validator,
+  validate,
+  integrations as validationIntegrations,
+} from './validation.js';
+
 // Export individual functions from Result (for tree-shaking optimization)
 import { Result as ResultClass } from './result.js';
 

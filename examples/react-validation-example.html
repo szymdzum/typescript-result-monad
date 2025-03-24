@@ -1,0 +1,88 @@
+<!-- examples/validation-example.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Validation Example</title>
+  <style>
+    .form-group { margin-bottom: 15px; }
+    .error { color: red; font-size: 12px; display: none; }
+    label { display: block; margin-bottom: 5px; }
+    input { padding: 5px; width: 250px; }
+    button { padding: 8px 15px; background: #4285f4; color: white; border: none; cursor: pointer; }
+    .success { color: green; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <h1>User Registration Form</h1>
+  <p>Example showing form validation with ts-result-monad</p>
+
+  <form id="userForm">
+    <div class="form-group">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name">
+      <div id="nameError" class="error">Name cannot be empty</div>
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email">
+      <div id="emailError" class="error">Please enter a valid email</div>
+    </div>
+
+    <div class="form-group">
+      <label for="age">Age</label>
+      <input type="number" id="age" name="age" value="0">
+      <div id="ageError" class="error">Age must be at least 18</div>
+    </div>
+
+    <button type="submit">Register</button>
+  </form>
+
+  <div id="result" class="success"></div>
+
+  <script>
+    // In a real application, you would import validate from ts-result-monad
+    // This is just for demonstration purposes
+    document.getElementById('userForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      // Hide all error messages
+      document.querySelectorAll('.error').forEach(el => el.style.display = 'none');
+
+      // Get form values
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const age = parseInt(document.getElementById('age').value || '0', 10);
+
+      // Validation - simplified version of what ts-result-monad validation would do
+      let isValid = true;
+
+      if (!name.trim()) {
+        document.getElementById('nameError').style.display = 'block';
+        isValid = false;
+      }
+
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(email)) {
+        document.getElementById('emailError').style.display = 'block';
+        isValid = false;
+      }
+
+      if (age < 18) {
+        document.getElementById('ageError').style.display = 'block';
+        isValid = false;
+      }
+
+      // Show result
+      const resultDiv = document.getElementById('result');
+      if (isValid) {
+        resultDiv.textContent = `Registration successful for ${name}!`;
+        resultDiv.style.display = 'block';
+      } else {
+        resultDiv.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
