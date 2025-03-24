@@ -21,7 +21,7 @@
     "error-handling",
     "functional-programming"
   ],
-  "author": "",
+  "author": "szymdzum",
   "license": "MIT",
   "devDependencies": {
     "@types/jest": "^29.5.0",
@@ -37,10 +37,10 @@
   "dependencies": {},
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/typescript-result-monad.git"
+    "url": "git+https://github.com/szymdzum/typescript-result-monad.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/typescript-result-monad/issues"
+    "url": "https://github.com/szymdzum/typescript-result-monad/issues"
   },
-  "homepage": "https://github.com/yourusername/typescript-result-monad#readme"
+  "homepage": "https://github.com/szymdzum/typescript-result-monad#readme"
 }
