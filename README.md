@@ -1,7 +1,7 @@
-# TypeScript Result Monad
+# Result Monad for TypeScript
 
-[![CI](https://github.com/szymdzum/typescript-result-monad/actions/workflows/ci.yml/badge.svg)](https://github.com/szymdzum/typescript-result-monad/actions/workflows/ci.yml)
-[![NPM Version](https://img.shields.io/npm/v/typescript-result-monad.svg)](https://www.npmjs.com/package/typescript-result-monad)
+[![CI](https://github.com/szymdzum/ts-result-monad/actions/workflows/ci.yml/badge.svg)](https://github.com/szymdzum/ts-result-monad/actions/workflows/ci.yml)
+[![NPM Version](https://img.shields.io/npm/v/ts-result-monad.svg)](https://www.npmjs.com/package/ts-result-monad)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A lightweight, zero-dependency TypeScript implementation of the Result monad pattern for elegant error handling without exceptions.
@@ -41,11 +41,11 @@ A lightweight, zero-dependency TypeScript implementation of the Result monad pat
 ## Installation
 
 ```bash
-npm install typescript-result-monad
+npm install ts-result-monad
 # or
-yarn add typescript-result-monad
+yarn add ts-result-monad
 # or
-pnpm add typescript-result-monad
+pnpm add ts-result-monad
 ```
 
 ## API Reference
@@ -190,7 +190,7 @@ npm run build && node dist/examples/basic-usage.js
 #### Importing
 
 ```typescript
-import { Result } from 'typescript-result-monad';
+import { Result } from 'ts-result-monad';
 ```
 
 #### Creating Success and Failure Results
@@ -375,7 +375,7 @@ try {
 #### Retrying Operations
 
 ```typescript
-import { Result, retry, tryCatchAsync } from 'typescript-result-monad';
+import { Result, retry, tryCatchAsync } from 'ts-result-monad';
 
 // Fetch data with potential network issues
 async function fetchDataFromAPI(url: string): Promise<Result<any, Error>> {
@@ -407,7 +407,7 @@ if (apiResult.isSuccess) {
 #### Working with Multiple Operations
 
 ```typescript
-import { Result, combineResults } from 'typescript-result-monad';
+import { Result, combineResults } from 'ts-result-monad';
 
 // Multiple independent operations
 const results = [
@@ -443,7 +443,7 @@ import {
   TechnicalError,
   TimeoutError,
   ConcurrencyError
-} from 'typescript-result-monad';
+} from 'ts-result-monad';
 
 // User validation example
 function validateUser(user: any): Result<any, Error> {
