@@ -32,7 +32,8 @@
     "clean": "rimraf dist",
     "prepare": "husky",
     "prepublishOnly": "pnpm run lint && pnpm run test && pnpm run build",
-    "ci": "pnpm run lint && pnpm run test:coverage && pnpm run build"
+    "ci": "pnpm run lint && pnpm run test:coverage && pnpm run build",
+    "docs": "typedoc --options typedoc.json"
   },
   "keywords": ["typescript", "monad", "result", "error-handling", "functional-programming"],
   "author": "szymdzum",
@@ -45,6 +46,8 @@
     "lint-staged": "^15.2.2",
     "rimraf": "^5.0.5",
     "terser": "^5.39.0",
+    "typedoc": "^0.28.1",
+    "typedoc-plugin-markdown": "^4.6.0",
     "typescript": "^5.3.3",
     "vite": "^5.1.4",
     "vite-plugin-dts": "^3.7.2",

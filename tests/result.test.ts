@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
+import { CancellationError } from '../src/errors';
 import { Result } from '../src/result';
 
 describe('Result', () => {
@@ -509,5 +510,91 @@ describe('Result', () => {
         },
       });
     });
+  });
+});
+
+describe('Cancellation', () => {
+  test('should create a cancelled result', () => {
+    const result = Result.cancelled<number, Error>();
+
+    expect(result.isSuccess).toBe(false);
+    expect(result.isFailure).toBe(true);
+    expect(result.isCancelled).toBe(true);
+    expect(result.error).toBeInstanceOf(CancellationError);
+    expect(result.error.message).toBe('Cancellation: Operation was cancelled');
+  });
+
+  test('should create a cancelled result with operationId', () => {
+    const result = Result.cancelled<string, Error>('request-123');
+
+    expect(result.isCancelled).toBe(true);
+    expect(result.error).toBeInstanceOf(CancellationError);
+    expect((result.error as CancellationError).operationId).toBe('request-123');
+  });
+
+  test('fromPromise should handle cancellation with AbortSignal', async () => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    // Create a promise that never resolves
+    const promise = new Promise<number>(resolve => {
+      setTimeout(() => resolve(42), 1000);
+    });
+
+    // Abort immediately
+    controller.abort();
+
+    const result = await Result.fromPromise(promise, signal);
+
+    expect(result.isSuccess).toBe(false);
+    expect(result.isFailure).toBe(true);
+    expect(result.isCancelled).toBe(true);
+    expect(result.error).toBeInstanceOf(CancellationError);
+  });
+
+  test('asyncMap should handle cancellation with AbortSignal', async () => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const result = Result.ok<number, Error>(42);
+
+    // Set up an async mapper that takes time
+    const mapper = async (n: number) => {
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 100));
+      return n * 2;
+    };
+
+    // Abort immediately
+    controller.abort();
+
+    const mappedResult = await result.asyncMap(mapper, signal);
+
+    expect(mappedResult.isSuccess).toBe(false);
+    expect(mappedResult.isFailure).toBe(true);
+    expect(mappedResult.isCancelled).toBe(true);
+    expect(mappedResult.error).toBeInstanceOf(CancellationError);
+  });
+
+  test('asyncFlatMap should handle cancellation with AbortSignal', async () => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const result = Result.ok<number, Error>(42);
+
+    // Set up an async flatMapper that takes time
+    const flatMapper = async (n: number) => {
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 100));
+      return Result.ok<string, Error>(n.toString());
+    };
+
+    // Abort immediately
+    controller.abort();
+
+    const flatMappedResult = await result.asyncFlatMap(flatMapper, signal);
+
+    expect(flatMappedResult.isSuccess).toBe(false);
+    expect(flatMappedResult.isFailure).toBe(true);
+    expect(flatMappedResult.isCancelled).toBe(true);
+    expect(flatMappedResult.error).toBeInstanceOf(CancellationError);
   });
 });

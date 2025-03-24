@@ -55,3 +55,6 @@ yarn-error.log*
 # pnpm
 .pnpm-store/
 .pnpm-debug.log
+
+# Documentation
+/docs

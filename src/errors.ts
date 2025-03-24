@@ -97,3 +97,29 @@ export class ConcurrencyError extends ResultError {
     Object.setPrototypeOf(this, ConcurrencyError.prototype);
   }
 }
+
+/**
+ * Error for cancelled operations
+ */
+export class CancellationError extends TechnicalError {
+  /**
+   * Request ID or other identifier for the cancelled operation
+   */
+  public readonly operationId?: string;
+
+  constructor(message = 'Operation was cancelled', operationId?: string, cause?: Error) {
+    super(`Cancellation: ${message}`, cause);
+    this.name = 'CancellationError';
+    this.operationId = operationId;
+
+    // Override the message property to remove the "Technical Error:" prefix
+    Object.defineProperty(this, 'message', {
+      configurable: true,
+      enumerable: false,
+      value: `Cancellation: ${message}`,
+      writable: true,
+    });
+
+    Object.setPrototypeOf(this, CancellationError.prototype);
+  }
+}

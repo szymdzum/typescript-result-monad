@@ -3,13 +3,25 @@
 [![CI](https://github.com/szymdzum/ts-result-monad/actions/workflows/ci.yml/badge.svg)](https://github.com/szymdzum/ts-result-monad/actions/workflows/ci.yml)
 [![NPM Version](https://img.shields.io/npm/v/ts-result-monad.svg)](https://www.npmjs.com/package/ts-result-monad)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Documentation](https://img.shields.io/badge/docs-TypeDoc-blue.svg)](https://szymdzum.github.io/ts-result-monad/)
 
 A lightweight, zero-dependency TypeScript implementation of the Result monad pattern for elegant error handling without exceptions.
+
+📖 **[Full API documentation is available here](https://szymdzum.github.io/ts-result-monad/)** - Generated with TypeDoc and updated automatically with each release.
 
 ## Table of Contents
 
 - [Features](#features)
 - [Installation](#installation)
+- [Documentation](https://szymdzum.github.io/ts-result-monad/)
+- [For Newcomers: Simple Examples](#for-newcomers-simple-examples)
+  - [The Problem: Traditional Error Handling](#the-problem-traditional-error-handling)
+  - [The Solution: Using Result](#the-solution-using-result)
+  - [Chaining Operations: The Simple Way](#chaining-operations-the-simple-way)
+- [Advanced TypeScript: Complex Generic Examples](#advanced-typescript-complex-generic-examples)
+  - [Generic Repository Pattern](#generic-repository-pattern)
+  - [Higher-Order Function with Result](#higher-order-function-with-result)
+  - [Generic Data Pipeline with Results](#generic-data-pipeline-with-results)
 - [API Reference](#api-reference)
   - [Result Class](#result-class)
   - [Utility Functions](#utility-functions)
@@ -20,6 +32,7 @@ A lightweight, zero-dependency TypeScript implementation of the Result monad pat
   - [Functional Composition](#functional-composition)
   - [Asynchronous Patterns](#asynchronous-patterns)
   - [Retry Utilities](#retry-utilities)
+  - [Cancellation Handling](#cancellation-handling)
 - [Examples](#examples)
   - [Basic Usage](#basic-usage-1)
   - [Functional Composition](#functional-composition-1)
@@ -31,6 +44,8 @@ A lightweight, zero-dependency TypeScript implementation of the Result monad pat
 - [License](#license)
 - [Bundle Size](#bundle-size)
 - [Tree-shaking](#tree-shaking)
+- [Performance Considerations](#performance-considerations)
+- [Compatibility](#compatibility)
 - [Getting Started](#getting-started)
 
 ## Features
@@ -150,6 +165,7 @@ pnpm add ts-result-monad
 | `TechnicalError` | `ResultError` | For technical/infrastructure issues |
 | `TimeoutError` | `TechnicalError` | For operation timeouts |
 | `ConcurrencyError` | `ResultError` | For concurrent modification issues |
+| `CancellationError` | `TechnicalError` | For cancelled operations |
 
 ## Detailed Examples
 
@@ -531,122 +547,4 @@ const mixedResults = [
 const mixedCombined = combineResults(mixedResults);
 console.log('Mixed succeeded?', mixedCombined.isSuccess); // false
 console.log('Error message:', mixedCombined.error.message); // "Second operation failed"
-```
-
-### Domain-Specific Error Types
-
-```typescript
-import {
-  ValidationError,
-  NotFoundError,
-  UnauthorizedError,
-  BusinessRuleError,
-  TechnicalError,
-  TimeoutError,
-  ConcurrencyError
-} from 'ts-result-monad';
-
-// User validation example
-function validateUser(user: any): Result<any, Error> {
-  if (!user.name) {
-    return Result.fail(new ValidationError('User name is required'));
-  }
-
-  if (!user.id) {
-    return Result.fail(new NotFoundError('User', user.email));
-  }
-
-  if (user.role !== 'admin') {
-    return Result.fail(new UnauthorizedError('Only admins can perform this action'));
-  }
-
-  return Result.ok(user);
-}
-
-// Process payment example
-function processPayment(paymentInfo: any): Result<string, Error> {
-  if (paymentInfo.amount <= 0) {
-    return Result.fail(new BusinessRuleError('Payment amount must be positive'));
-  }
-
-  if (!paymentInfo.paymentMethod) {
-    return Result.fail(new ValidationError('Payment method is required'));
-  }
-
-  // Simulate payment processing
-  try {
-    // Success case
-    return Result.ok('Transaction ID: ' + Math.random().toString(36).substring(2, 15));
-  } catch (e) {
-    // Different error types based on the failure reason
-    return Result.fail(new TechnicalError('Payment gateway connection failed', e as Error));
-  }
-}
-```
-
-## Why Use Result?
-
-### Problems with Traditional Error Handling
-
-1. **Exception handling is implicit** - Callers can easily forget to catch exceptions
-2. **Type information is lost** - Try/catch blocks don't preserve the return type
-3. **Control flow is obscured** - Exceptions create non-linear, hard to follow code paths
-4. **Error handling is scattered** - Multiple catch blocks lead to duplicated error handling logic
-
-### Benefits of Result Pattern
-
-1. **Explicit error handling** - Errors become first-class citizens in your code
-2. **Type-safe** - TypeScript's type system ensures you handle both success and failure
-3. **Composable** - Chain operations with clear error propagation
-4. **Centralized error handling** - Handle errors in a single place at the end of the chain
-5. **Testable** - Easier to test both success and failure paths
-
-## License
-
-MIT
-
-## Bundle Size
-
-The package is designed to be lightweight:
-
-| Format | Size    | Gzipped |
-|--------|---------|---------|
-| ES     | 8.60 kB | 2.19 kB |
-| UMD    | 4.51 kB | 1.60 kB |
-
-## Tree-shaking
-
-This package supports tree-shaking out of the box. You can selectively import only the specific components you need to minimize your bundle size:
-
-```typescript
-// Import just what you need
-import { Result } from 'ts-result-monad';
-
-// Or specific utilities
-import { tryCatchAsync, retry } from 'ts-result-monad';
-
-// Or specific error types
-import { ValidationError, NotFoundError } from 'ts-result-monad';
-```
-
-For even more optimized bundles, you can import the static methods of Result as standalone functions:
-
-```typescript
-// Instead of Result.ok() and Result.fail()
-import { ok, fail, fromThrowable, fromPromise } from 'ts-result-monad';
-
-// Examples
-const success = ok(42);
-const failure = fail(new Error('Something went wrong'));
-const result = fromThrowable(() => JSON.parse('{"valid": "json"}'));
-```
-
-## Getting Started
-
-```bash
-npm install ts-result-monad
-# or
-yarn add ts-result-monad
-# or
-pnpm add ts-result-monad
 ```

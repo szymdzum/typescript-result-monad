@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   BusinessRuleError,
+  CancellationError,
   ConcurrencyError,
   NotFoundError,
   ResultError,
@@ -214,6 +215,36 @@ describe('ConcurrencyError', () => {
       "Concurrency Error: Order with id '12345' was modified by another process"
     );
     expect(error.stack).toContain('Database version conflict');
+  });
+});
+
+describe('CancellationError', () => {
+  test('should create a cancellation error with default message', () => {
+    const error = new CancellationError();
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error).toBeInstanceOf(TechnicalError);
+    expect(error).toBeInstanceOf(CancellationError);
+    expect(error.message).toBe('Cancellation: Operation was cancelled');
+    expect(error.name).toBe('CancellationError');
+    expect(error.operationId).toBeUndefined();
+    expect(error.cause).toBeUndefined();
+  });
+
+  test('should create a cancellation error with custom message and operationId', () => {
+    const error = new CancellationError('User aborted request', 'request-123');
+
+    expect(error.message).toBe('Cancellation: User aborted request');
+    expect(error.operationId).toBe('request-123');
+  });
+
+  test('should create a cancellation error with cause', () => {
+    const cause = new Error('Original error');
+    const error = new CancellationError('Request cancelled', 'op-456', cause);
+
+    expect(error.cause).toBe(cause);
+    expect(error.message).toBe('Cancellation: Request cancelled');
+    expect(error.operationId).toBe('op-456');
   });
 });
 
