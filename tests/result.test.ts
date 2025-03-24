@@ -367,4 +367,147 @@ describe('Result', () => {
       expect(result.error).toBe(error);
     });
   });
+
+  describe('asyncMap', () => {
+    test('should asynchronously map success value', async () => {
+      const result = Result.ok<number, Error>(42);
+      const asyncMapped = await result.asyncMap(async value => value * 2);
+
+      expect(asyncMapped.isSuccess).toBe(true);
+      expect(asyncMapped.value).toBe(84);
+    });
+
+    test('should not apply asyncMap for failure', async () => {
+      const error = new Error('Something went wrong');
+      const result = Result.fail<number, Error>(error);
+      const asyncMapped = await result.asyncMap(async value => value * 2);
+
+      expect(asyncMapped.isFailure).toBe(true);
+      expect(asyncMapped.error).toBe(error);
+    });
+
+    test('should handle errors in async mapping function', async () => {
+      const result = Result.ok<number, Error>(42);
+      const mappingError = new Error('Mapping failed');
+      const asyncMapped = await result.asyncMap(async () => {
+        throw mappingError;
+      });
+
+      expect(asyncMapped.isFailure).toBe(true);
+      expect(asyncMapped.error.message).toBe(mappingError.message);
+    });
+  });
+
+  describe('asyncFlatMap', () => {
+    test('should asynchronously flatMap success value', async () => {
+      const result = Result.ok<number, Error>(42);
+      const asyncFlatMapped = await result.asyncFlatMap(async value =>
+        Result.ok<string, Error>(value.toString())
+      );
+
+      expect(asyncFlatMapped.isSuccess).toBe(true);
+      expect(asyncFlatMapped.value).toBe('42');
+    });
+
+    test('should not apply asyncFlatMap for failure', async () => {
+      const error = new Error('Something went wrong');
+      const result = Result.fail<number, Error>(error);
+      const asyncFlatMapped = await result.asyncFlatMap(async value =>
+        Result.ok<string, Error>(value.toString())
+      );
+
+      expect(asyncFlatMapped.isFailure).toBe(true);
+      expect(asyncFlatMapped.error).toBe(error);
+    });
+
+    test('should handle errors in async flatMapping function', async () => {
+      const result = Result.ok<number, Error>(42);
+      const flatMappingError = new Error('FlatMapping failed');
+      const asyncFlatMapped = await result.asyncFlatMap(async () => {
+        throw flatMappingError;
+      });
+
+      expect(asyncFlatMapped.isFailure).toBe(true);
+      expect(asyncFlatMapped.error.message).toBe(flatMappingError.message);
+    });
+  });
+
+  describe('orElse', () => {
+    test('should return the original result if it is a success', () => {
+      const result = Result.ok<number, Error>(42);
+      const alternative = Result.ok<number, Error>(99);
+      const orElseResult = result.orElse(alternative);
+
+      expect(orElseResult).toBe(result); // Should return the same instance
+      expect(orElseResult.value).toBe(42);
+    });
+
+    test('should return the alternative result if original is a failure', () => {
+      const error = new Error('Something went wrong');
+      const result = Result.fail<number, Error>(error);
+      const alternative = Result.ok<number, Error>(99);
+      const orElseResult = result.orElse(alternative);
+
+      expect(orElseResult).toBe(alternative); // Should return the alternative instance
+      expect(orElseResult.value).toBe(99);
+    });
+
+    test('alternative can also be a failure', () => {
+      const error1 = new Error('First error');
+      const error2 = new Error('Second error');
+      const result1 = Result.fail<number, Error>(error1);
+      const result2 = Result.fail<number, Error>(error2);
+      const orElseResult = result1.orElse(result2);
+
+      expect(orElseResult.isFailure).toBe(true);
+      expect(orElseResult.error).toBe(error2);
+    });
+  });
+
+  describe('toJSON', () => {
+    test('should create a serializable object for success', () => {
+      const result = Result.ok<number, Error>(42);
+      const json = result.toJSON();
+
+      expect(json).toEqual({
+        success: true,
+        value: 42,
+      });
+    });
+
+    test('should create a serializable object for failure', () => {
+      const error = new Error('Something went wrong');
+      const result = Result.fail<number, Error>(error);
+      const json = result.toJSON();
+
+      expect(json).toEqual({
+        success: false,
+        error: {
+          name: 'Error',
+          message: 'Something went wrong',
+        },
+      });
+    });
+
+    test('should handle custom error types', () => {
+      class CustomError extends Error {
+        constructor(message: string) {
+          super(message);
+          this.name = 'CustomError';
+        }
+      }
+
+      const error = new CustomError('Custom error message');
+      const result = Result.fail<number, Error>(error);
+      const json = result.toJSON();
+
+      expect(json).toEqual({
+        success: false,
+        error: {
+          name: 'CustomError',
+          message: 'Custom error message',
+        },
+      });
+    });
+  });
 });

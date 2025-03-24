@@ -100,6 +100,22 @@ pnpm add ts-result-monad
 | Method | Signature | Description |
 |--------|-----------|-------------|
 | `toPromise` | `(): Promise<T>` | Converts the Result to a Promise |
+| `asyncMap` | `<U>(fn: (value: T) => Promise<U>): Promise<Result<U, E>>` | Asynchronously transforms the success value |
+| `asyncFlatMap` | `<U>(fn: (value: T) => Promise<Result<U, E>>): Promise<Result<U, E>>` | Chains async operations that return Results |
+
+##### Serialization
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `toJSON` | `(): { success: boolean; value?: T; error?: { name: string; message: string } }` | Converts the Result to a serializable object |
+
+##### Access & Recovery Methods
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `match` | `<U>(onSuccess: (value: T) => U, onFailure: (error: E) => U): U` | Pattern matching for both cases |
+| `getOrElse` | `(defaultValue: T): T` | Returns the value or a default |
+| `getOrCall` | `(fn: (error: E) => T): T` | Returns the value or computes one from the error |
+| `recover` | `(fn: (error: E) => Result<T, E>): Result<T, E>` | Attempts to recover from an error |
+| `orElse` | `(alternative: Result<T, E>): Result<T, E>` | Returns an alternative Result if this is a failure |
 
 ### Utility Functions
 
@@ -372,6 +388,88 @@ try {
   console.log('Promise resolved with:', value); // "Hello, world!"
 } catch (error) {
   console.error('Promise rejected with:', error);
+}
+```
+
+#### Using Async Transformations
+
+```typescript
+// Using asyncMap to transform a value with an async function
+async function processDataAsync() {
+  const result = Result.ok<number, Error>(42);
+
+  // Asynchronously transform the value
+  const asyncResult = await result.asyncMap(async (num) => {
+    // Simulate an API call or other async operation
+    const response = await fetch(`https://api.example.com/multiply?value=${num}`);
+    const data = await response.json();
+    return data.result; // Assume this is 84 (42 * 2)
+  });
+
+  // If the async operation succeeds
+  if (asyncResult.isSuccess) {
+    console.log('Processed data:', asyncResult.value); // 84
+  }
+}
+
+// Using asyncFlatMap for chaining async operations that return Results
+async function validateAndProcessAsync(userId: string) {
+  const userResult = Result.ok<string, Error>(userId);
+
+  // Chain multiple async operations
+  const finalResult = await userResult
+    .asyncFlatMap(async (id) => {
+      // Fetch user data
+      const userData = await fetchUserData(id);
+      return userData.isSuccess
+        ? userData
+        : Result.fail<UserData, Error>(new Error('User fetch failed'));
+    })
+    .asyncFlatMap(async (user) => {
+      // Process user permissions
+      const permissions = await checkPermissions(user);
+      return permissions;
+    });
+
+  return finalResult;
+}
+```
+
+#### Using orElse for Fallback Results
+
+```typescript
+// Try primary data source, fall back to backup if it fails
+async function getData(): Promise<Result<string, Error>> {
+  const primaryResult = await fetchFromPrimary();
+
+  // If primary fails, try backup instead
+  return primaryResult.orElse(await fetchFromBackup());
+}
+
+// Can also be used with synchronous operations
+function getCachedOrCompute(key: string): Result<string, Error> {
+  const cachedResult = getCachedValue(key);
+
+  // If no cached value, compute it
+  return cachedResult.orElse(computeValue(key));
+}
+```
+
+#### JSON Serialization for Logging and Storage
+
+```typescript
+function processAndLog(input: string) {
+  const result = processInput(input);
+
+  // Convert to JSON-friendly object for logging
+  const logObject = result.toJSON();
+  logger.info('Processing result', logObject);
+
+  // The logObject will look like:
+  // Success case: { success: true, value: "processed data" }
+  // Failure case: { success: false, error: { name: "ValidationError", message: "Invalid input" } }
+
+  return result;
 }
 ```
 

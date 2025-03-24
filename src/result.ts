@@ -151,6 +151,70 @@ export class Result<T, E extends Error> {
   }
 
   /**
+   * Asynchronously maps the result value if successful.
+   * Allows transforming the value using a function that returns a Promise.
+   */
+  public async asyncMap<U>(f: (value: T) => Promise<U>): Promise<Result<U, E>> {
+    if (this.isFailure) {
+      return Result.fail<U, E>(this._error as E);
+    }
+    try {
+      const mappedValue = await f(this._value as T);
+      return Result.ok<U, E>(mappedValue);
+    } catch (error) {
+      return Result.fail<U, E>(
+        error instanceof Error ? (error as E) : (new Error(String(error)) as E)
+      );
+    }
+  }
+
+  /**
+   * Asynchronously chain results together.
+   * Allows chaining with a function that returns a Promise<Result>.
+   */
+  public async asyncFlatMap<U>(f: (value: T) => Promise<Result<U, E>>): Promise<Result<U, E>> {
+    if (this.isFailure) {
+      return Result.fail<U, E>(this._error as E);
+    }
+    try {
+      return await f(this._value as T);
+    } catch (error) {
+      return Result.fail<U, E>(
+        error instanceof Error ? (error as E) : (new Error(String(error)) as E)
+      );
+    }
+  }
+
+  /**
+   * Return an alternative result if this result is a failure.
+   * Similar to withFallback utility but as an instance method.
+   */
+  public orElse(alternative: Result<T, E>): Result<T, E> {
+    return this.isSuccess ? this : alternative;
+  }
+
+  /**
+   * Convert result to a JSON-serializable object.
+   * Useful for logging, debugging, or storing the result.
+   */
+  public toJSON(): { success: boolean; value?: T; error?: { name: string; message: string } } {
+    if (this.isSuccess) {
+      return {
+        success: true,
+        value: this._value as T,
+      };
+    }
+
+    return {
+      success: false,
+      error: {
+        name: this._error?.name || 'Error',
+        message: this._error?.message || 'Unknown error',
+      },
+    };
+  }
+
+  /**
    * Create a Result from a Promise
    */
   public static fromPromise<U>(promise: Promise<U>): Promise<Result<U, Error>> {
