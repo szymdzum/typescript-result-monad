@@ -1,12 +1,12 @@
 import {
-  Result,
-  ValidationError,
-  NotFoundError,
-  UnauthorizedError,
   BusinessRuleError,
+  ConcurrencyError,
+  NotFoundError,
+  Result,
   TechnicalError,
   TimeoutError,
-  ConcurrencyError
+  UnauthorizedError,
+  ValidationError,
 } from '../src';
 
 /**
@@ -102,7 +102,7 @@ function saveDocument(doc: Document): Result<Document, Error> {
   // Simulated successful save with updated version
   return Result.ok({
     ...doc,
-    version: doc.version + 1
+    version: doc.version + 1,
   });
 }
 
@@ -117,14 +117,15 @@ function performComplexOperation(userId: string): Result<any, Error> {
   }
 
   // Second operation: validate user with flatMap
-  return userResult.flatMap(user => validateUser(user))
+  return userResult
+    .flatMap(user => validateUser(user))
     .flatMap(validatedUser => {
       // Third operation: process payment if user is valid
       const payment: Payment = {
         amount: 100,
         currency: 'USD',
         paymentMethod: 'credit_card',
-        accountBalance: 150
+        accountBalance: 150,
       };
 
       return processPayment(payment);
@@ -134,7 +135,7 @@ function performComplexOperation(userId: string): Result<any, Error> {
       return {
         success: true,
         transactionId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     })
     .mapError(error => {
@@ -155,7 +156,7 @@ function findUser(userId: string): Result<User, Error> {
       id: '123',
       name: 'John Doe',
       email: 'john@example.com',
-      role: 'admin'
+      role: 'admin',
     });
   }
 
@@ -233,7 +234,7 @@ function runExamples() {
 
   // Try multiple times to demonstrate different error types
   for (let i = 0; i < 5; i++) {
-    console.log(`\nSave attempt ${i+1}:`);
+    console.log(`\nSave attempt ${i + 1}:`);
     handleOperationResult(saveDocument(document));
   }
 
@@ -253,5 +254,5 @@ export {
   saveDocument,
   performComplexOperation,
   handleOperationResult,
-  runExamples
+  runExamples,
 };

@@ -35,7 +35,10 @@ function parseId(data: RawData): Result<{ rawData: RawData; id: number }, Error>
 }
 
 // Step 2: Parse string values into numbers
-function parseValues(data: { rawData: RawData; id: number }): Result<{ rawData: RawData; id: number; values: number[] }, Error> {
+function parseValues(data: { rawData: RawData; id: number }): Result<
+  { rawData: RawData; id: number; values: number[] },
+  Error
+> {
   try {
     const values = data.rawData.values.map(val => {
       const num = parseFloat(val);
@@ -52,12 +55,15 @@ function parseValues(data: { rawData: RawData; id: number }): Result<{ rawData: 
 }
 
 // Step 3: Parse dates from the metadata
-function parseDates(data: { rawData: RawData; id: number; values: number[] }): Result<{
-  id: number;
-  values: number[];
-  createdDate: Date;
-  modifiedDate?: Date
-}, Error> {
+function parseDates(data: { rawData: RawData; id: number; values: number[] }): Result<
+  {
+    id: number;
+    values: number[];
+    createdDate: Date;
+    modifiedDate?: Date;
+  },
+  Error
+> {
   if (!data.rawData.metadata?.created) {
     return Result.fail(new Error('Missing creation date in metadata'));
   }
@@ -75,7 +81,9 @@ function parseDates(data: { rawData: RawData; id: number; values: number[] }): R
       modifiedDate = new Date(data.rawData.metadata.modified);
 
       if (isNaN(modifiedDate.getTime())) {
-        return Result.fail(new Error(`Invalid modification date: ${data.rawData.metadata.modified}`));
+        return Result.fail(
+          new Error(`Invalid modification date: ${data.rawData.metadata.modified}`)
+        );
       }
     }
 
@@ -83,7 +91,7 @@ function parseDates(data: { rawData: RawData; id: number; values: number[] }): R
       id: data.id,
       values: data.values,
       createdDate,
-      modifiedDate
+      modifiedDate,
     });
   } catch (error) {
     return Result.fail(error instanceof Error ? error : new Error(String(error)));
@@ -95,22 +103,19 @@ function createProcessedData(data: {
   id: number;
   values: number[];
   createdDate: Date;
-  modifiedDate?: Date
+  modifiedDate?: Date;
 }): Result<ProcessedData, Error> {
   return Result.ok({
     identifier: data.id,
     count: data.values.length,
     items: data.values,
-    createdDate: data.createdDate
+    createdDate: data.createdDate,
   });
 }
 
 // Complete pipeline combining all steps
 function processData(rawData: RawData): Result<ProcessedData, Error> {
-  return parseId(rawData)
-    .flatMap(parseValues)
-    .flatMap(parseDates)
-    .flatMap(createProcessedData);
+  return parseId(rawData).flatMap(parseValues).flatMap(parseDates).flatMap(createProcessedData);
 }
 
 // Example 2: Validation pipeline with early return
@@ -146,7 +151,7 @@ function validateUserInput(input: UserInput): Result<ValidatedUser, Error> {
     username: usernameResult.value,
     email: emailResult.value,
     password: passwordResult.value,
-    age: ageResult.value
+    age: ageResult.value,
   });
 }
 
@@ -224,14 +229,16 @@ function withContext(context: AppContext) {
       return Result.fail(new Error('Missing auth token in context'));
     }
 
-    console.log(`[${context.timestamp.toISOString()}] User ${context.userId} requested todo ${todoId}`);
+    console.log(
+      `[${context.timestamp.toISOString()}] User ${context.userId} requested todo ${todoId}`
+    );
 
     // Simulate API call to get a todo item
     if (todoId === '1') {
       return Result.ok({
         id: '1',
         title: 'Learn functional programming',
-        completed: false
+        completed: false,
       });
     }
 
@@ -291,16 +298,16 @@ function runExamples(): void {
     id: '123',
     values: ['1.5', '2.5', '3.5'],
     metadata: {
-      created: '2023-05-15T10:30:00Z'
-    }
+      created: '2023-05-15T10:30:00Z',
+    },
   };
 
   const invalidRawData: RawData = {
     id: 'abc', // Invalid ID
     values: ['1.5', 'not-a-number', '3.5'],
     metadata: {
-      created: 'invalid-date'
-    }
+      created: 'invalid-date',
+    },
   };
 
   const validResult = processData(validRawData);
@@ -324,14 +331,14 @@ function runExamples(): void {
     username: 'johndoe',
     email: 'john@example.com',
     password: 'password123',
-    age: 25
+    age: 25,
   };
 
   const invalidUserInput: UserInput = {
     username: 'jo', // Too short
     email: 'not-an-email',
     password: 'short',
-    age: 16 // Too young
+    age: 16, // Too young
   };
 
   const validUserResult = validateUserInput(validUserInput);
@@ -354,7 +361,7 @@ function runExamples(): void {
   const context: AppContext = {
     userId: 'user-123',
     authToken: 'auth-token-456',
-    timestamp: new Date()
+    timestamp: new Date(),
   };
 
   const getTodo = withContext(context);
@@ -383,10 +390,4 @@ if (require.main === module) {
   runExamples();
 }
 
-export {
-  processData,
-  validateUserInput,
-  withContext,
-  combineResults,
-  runExamples
-};
+export { processData, validateUserInput, withContext, combineResults, runExamples };

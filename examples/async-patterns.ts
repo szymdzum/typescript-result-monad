@@ -1,5 +1,5 @@
 import { Result } from '../src/result';
-import { tryCatchAsync, retry } from '../src/utils';
+import { retry, tryCatchAsync } from '../src/utils';
 
 /**
  * This file demonstrates async patterns with the Result monad.
@@ -18,7 +18,7 @@ async function fetchUserData(userId: string): Promise<Result<any, Error>> {
       return {
         id: '123',
         name: 'John Doe',
-        email: 'john@example.com'
+        email: 'john@example.com',
       };
     }
 
@@ -70,7 +70,9 @@ async function fetchMultipleUsers(userIds: string[]): Promise<Result<any[], Erro
 function promiseToResult<T>(promise: Promise<T>): Promise<Result<T, Error>> {
   return promise
     .then(value => Result.ok<T, Error>(value))
-    .catch(error => Result.fail<T, Error>(error instanceof Error ? error : new Error(String(error))));
+    .catch(error =>
+      Result.fail<T, Error>(error instanceof Error ? error : new Error(String(error)))
+    );
 }
 
 // Example callback-based function (Node.js style)
@@ -121,7 +123,7 @@ async function fetchWithRetry(url: string): Promise<Result<any, Error>> {
       return {
         url,
         data: 'Fetched data',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     });
   };
@@ -221,7 +223,10 @@ async function runExamples(): Promise<void> {
       console.log('Error:', timeoutResult.error.message);
     }
   } catch (error) {
-    console.log('Error (expected in Node.js environment):', error instanceof Error ? error.message : String(error));
+    console.log(
+      'Error (expected in Node.js environment):',
+      error instanceof Error ? error.message : String(error)
+    );
     console.log('Note: This example is designed for browser environments with fetch API.');
   }
 }
@@ -239,5 +244,5 @@ export {
   readFileResult,
   fetchWithRetry,
   fetchWithTimeout,
-  runExamples
+  runExamples,
 };

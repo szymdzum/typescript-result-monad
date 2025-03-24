@@ -143,6 +143,15 @@ describe('Utility Functions', () => {
       expect(result.error.message).toContain('Thrown error');
     });
 
+    test('should wrap thrown non-Error in TechnicalError', async () => {
+      const throwingFn = () => {
+        throw 'string error'; // non-Error throw
+      };
+      const result = await promisifyWithResult(throwingFn);
+      expect(result.isFailure).toBe(true);
+      expect(result.error).toBeInstanceOf(TechnicalError);
+    });
+
     test('should wrap non-Error callback errors in TechnicalError', async () => {
       // Arrange
       const callbackFn = (_: string, callback: (err: any, result: string) => void) => {
@@ -380,5 +389,22 @@ describe('Utility Functions', () => {
       expect(result.value).toBe('Resource found after retries');
       expect(counter).toBe(3);
     }, 10000); // Increase timeout
+
+    test('should handle undefined lastError case', async () => {
+      const mockFn = vi.fn().mockImplementation(async () => {
+        throw undefined;
+      });
+      const result = await retry(mockFn, { maxAttempts: 1 });
+      expect(result.isFailure).toBe(true);
+      expect(result.error).toBeInstanceOf(TechnicalError);
+      expect(result.error.message).toBe('Technical Error: undefined');
+    });
+
+    test('should use default options when none provided', async () => {
+      const mockFn = vi.fn().mockResolvedValue(Result.ok('success'));
+      const result = await retry(mockFn);
+      expect(result.isSuccess).toBe(true);
+      expect(result.value).toBe('success');
+    });
   });
 });
