@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "description": "A lightweight, zero-dependency TypeScript implementation of the Result monad pattern for elegant error handling without exceptions.",
   "type": "module",
+  "packageManager": "pnpm@10.4.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
+    "preinstall": "node .scripts/preinstall.js",
     "dev": "vite",
     "build": "vite build",
     "test": "vitest run",
