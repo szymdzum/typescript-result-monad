@@ -6,9 +6,18 @@
   "packageManager": "pnpm@10.4.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.es.js",
+      "require": "./dist/index.umd.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": ["dist"],
+  "sideEffects": false,
   "scripts": {
     "preinstall": "node .scripts/preinstall.js",
     "dev": "vite",
@@ -25,13 +34,7 @@
     "prepublishOnly": "pnpm run lint && pnpm run test && pnpm run build",
     "ci": "pnpm run lint && pnpm run test:coverage && pnpm run build"
   },
-  "keywords": [
-    "typescript",
-    "monad",
-    "result",
-    "error-handling",
-    "functional-programming"
-  ],
+  "keywords": ["typescript", "monad", "result", "error-handling", "functional-programming"],
   "author": "szymdzum",
   "license": "MIT",
   "devDependencies": {
@@ -56,9 +59,6 @@
   },
   "homepage": "https://github.com/szymdzum/ts-result-monad#readme",
   "lint-staged": {
-    "*.{js,ts}": [
-      "biome check --apply",
-      "biome format --write"
-    ]
+    "*.{js,ts}": ["biome check --apply", "biome format --write"]
   }
 }

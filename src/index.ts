@@ -1,5 +1,5 @@
 /**
- * Main entry point for the typescript-result-monad package
+ * Main entry point for the ts-result-monad package
  * Exports all components for easy access
  */
 
@@ -31,3 +31,12 @@ export {
   withFallback,
   retry,
 } from './utils.js';
+
+// Export individual functions from Result (for tree-shaking optimization)
+import { Result as ResultClass } from './result.js';
+
+// Static methods as standalone functions
+export const ok = ResultClass.ok;
+export const fail = ResultClass.fail;
+export const fromPromise = ResultClass.fromPromise;
+export const fromThrowable = ResultClass.fromThrowable;

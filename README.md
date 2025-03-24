@@ -29,6 +29,9 @@ A lightweight, zero-dependency TypeScript implementation of the Result monad pat
   - [Domain-Specific Error Types](#domain-specific-error-types)
 - [Why Use Result?](#why-use-result)
 - [License](#license)
+- [Bundle Size](#bundle-size)
+- [Tree-shaking](#tree-shaking)
+- [Getting Started](#getting-started)
 
 ## Features
 
@@ -503,3 +506,49 @@ function processPayment(paymentInfo: any): Result<string, Error> {
 ## License
 
 MIT
+
+## Bundle Size
+
+The package is designed to be lightweight:
+
+| Format | Size    | Gzipped |
+|--------|---------|---------|
+| ES     | 8.60 kB | 2.19 kB |
+| UMD    | 4.51 kB | 1.60 kB |
+
+## Tree-shaking
+
+This package supports tree-shaking out of the box. You can selectively import only the specific components you need to minimize your bundle size:
+
+```typescript
+// Import just what you need
+import { Result } from 'ts-result-monad';
+
+// Or specific utilities
+import { tryCatchAsync, retry } from 'ts-result-monad';
+
+// Or specific error types
+import { ValidationError, NotFoundError } from 'ts-result-monad';
+```
+
+For even more optimized bundles, you can import the static methods of Result as standalone functions:
+
+```typescript
+// Instead of Result.ok() and Result.fail()
+import { ok, fail, fromThrowable, fromPromise } from 'ts-result-monad';
+
+// Examples
+const success = ok(42);
+const failure = fail(new Error('Something went wrong'));
+const result = fromThrowable(() => JSON.parse('{"valid": "json"}'));
+```
+
+## Getting Started
+
+```bash
+npm install ts-result-monad
+# or
+yarn add ts-result-monad
+# or
+pnpm add ts-result-monad
+```
