@@ -1,0 +1,17 @@
+{
+  "entryPoints": ["src/index.ts"],
+  "out": "docs",
+  "name": "ts-result-monad API Documentation",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "readme": "README.md",
+  "theme": "default",
+  "categoryOrder": ["Main", "Result", "Error Types", "Utilities", "*"],
+  "searchInComments": true,
+  "navigationLinks": {
+    "GitHub": "https://github.com/szymdzum/ts-result-monad",
+    "NPM": "https://www.npmjs.com/package/ts-result-monad"
+  }
+}

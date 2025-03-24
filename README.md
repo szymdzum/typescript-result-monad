@@ -31,6 +31,8 @@ A lightweight, zero-dependency TypeScript implementation of the Result monad pat
 - [License](#license)
 - [Bundle Size](#bundle-size)
 - [Tree-shaking](#tree-shaking)
+- [Performance Considerations](#performance-considerations)
+- [Compatibility](#compatibility)
 - [Getting Started](#getting-started)
 
 ## Features
@@ -640,6 +642,37 @@ const success = ok(42);
 const failure = fail(new Error('Something went wrong'));
 const result = fromThrowable(() => JSON.parse('{"valid": "json"}'));
 ```
+
+## Performance Considerations
+
+ts-result-monad is designed with performance in mind:
+
+- **Lightweight**: Minimal abstractions and zero dependencies
+- **Immutable Objects**: Uses `Object.freeze()` for safety (slight performance impact)
+- **Tree-shaking Optimized**: Import only what you need
+- **Memory Efficient**: No unnecessary object creation in implementation
+- **Benchmarks**: For high-frequency operations (millions per second), benchmarking is recommended
+
+### Performance Tips
+
+- Avoid unnecessary chaining for performance-critical code paths
+- For large data sets, consider batching operations
+- The async methods use native Promises which are well-optimized in modern JavaScript engines
+
+## Compatibility
+
+### Browser Support
+
+- Full compatibility with all modern browsers:
+  - Chrome, Firefox, Safari, Edge (latest 2 versions)
+- IE11 is not supported due to ES6+ features
+- Transpilation may be required for older browsers
+
+### Node.js Support
+
+- Compatible with Node.js 16.x and above
+- Uses ES Modules by default (package.json "type": "module")
+- UMD build is provided for CommonJS compatibility
 
 ## Getting Started
 
