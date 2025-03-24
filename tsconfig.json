@@ -1,20 +1,18 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "module": "ESNext",
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Node",
     "esModuleInterop": true,
     "strict": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
-    "incremental": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "removeComments": false,
-    "lib": ["ES2020", "DOM"],
+    "lib": ["ES2022", "DOM"],
     "jsx": "react",
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
@@ -26,9 +24,13 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "useDefineForClassFields": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "include": ["src/**/*", "vite.config.ts", "vitest.config.ts", "tests/**/*"],
+  "exclude": ["node_modules", "dist", "coverage"]
 }
-

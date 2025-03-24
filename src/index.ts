@@ -3,6 +3,9 @@
  * Exports all components for easy access
  */
 
+// Import types
+import './types.js';
+
 // Export the Result class
 export { Result } from './result.js';
 
@@ -15,7 +18,7 @@ export {
   BusinessRuleError,
   TechnicalError,
   TimeoutError,
-  ConcurrencyError
+  ConcurrencyError,
 } from './errors.js';
 
 // Export all utility functions
@@ -26,6 +29,5 @@ export {
   fromPredicate,
   mapResult,
   withFallback,
-  retry
+  retry,
 } from './utils.js';
-

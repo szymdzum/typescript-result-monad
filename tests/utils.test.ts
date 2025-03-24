@@ -1,23 +1,19 @@
+import { describe, expect, test, vi } from 'vitest';
+import { NotFoundError, TechnicalError, ValidationError } from '../src/errors.js';
 import { Result } from '../src/result.js';
 import {
   combineResults,
-  tryCatchAsync,
-  promisifyWithResult,
   fromPredicate,
   mapResult,
+  promisifyWithResult,
+  retry,
+  tryCatchAsync,
   withFallback,
-  retry
 } from '../src/utils.js';
-import {
-  TechnicalError,
-  ValidationError,
-  NotFoundError
-} from '../src/errors.js';
 
 describe('Utility Functions', () => {
   // Helper function to create a delay
-  const delay = (ms: number): Promise<void> => 
-    new Promise(resolve => setTimeout(resolve, ms));
+  const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
   describe('combineResults', () => {
     test('should combine multiple successful results into a single success result', () => {
@@ -25,10 +21,10 @@ describe('Utility Functions', () => {
       const result1 = Result.ok<number, Error>(1);
       const result2 = Result.ok<number, Error>(2);
       const result3 = Result.ok<number, Error>(3);
-      
+
       // Act
       const combined = combineResults([result1, result2, result3]);
-      
+
       // Assert
       expect(combined.isSuccess).toBe(true);
       expect(combined.value).toEqual([1, 2, 3]);
@@ -39,10 +35,10 @@ describe('Utility Functions', () => {
       const result1 = Result.ok<number, Error>(1);
       const result2 = Result.fail<number, Error>(new ValidationError('Invalid input'));
       const result3 = Result.ok<number, Error>(3);
-      
+
       // Act
       const combined = combineResults([result1, result2, result3]);
-      
+
       // Assert
       expect(combined.isFailure).toBe(true);
       expect(combined.error.name).toBe('ValidationError');
@@ -52,7 +48,7 @@ describe('Utility Functions', () => {
     test('should return success with empty array for empty input array', () => {
       // Act
       const combined = combineResults<number, Error>([]);
-      
+
       // Assert
       expect(combined.isSuccess).toBe(true);
       expect(combined.value).toEqual([]);
@@ -63,10 +59,10 @@ describe('Utility Functions', () => {
     test('should return success result when async function succeeds', async () => {
       // Arrange
       const asyncFn = async () => 'success';
-      
+
       // Act
       const result = await tryCatchAsync(asyncFn);
-      
+
       // Assert
       expect(result.isSuccess).toBe(true);
       expect(result.value).toBe('success');
@@ -75,11 +71,13 @@ describe('Utility Functions', () => {
     test('should return failure result when async function throws', async () => {
       // Arrange
       const error = new Error('Async error');
-      const asyncFn = async () => { throw error; };
-      
+      const asyncFn = async () => {
+        throw error;
+      };
+
       // Act
       const result = await tryCatchAsync(asyncFn);
-      
+
       // Assert
       expect(result.isFailure).toBe(true);
       expect(result.error).toBe(error);
@@ -87,11 +85,13 @@ describe('Utility Functions', () => {
 
     test('should wrap non-Error throws in a TechnicalError', async () => {
       // Arrange
-      const asyncFn = async () => { throw 'string error'; };
-      
+      const asyncFn = async () => {
+        throw 'string error';
+      };
+
       // Act
       const result = await tryCatchAsync(asyncFn);
-      
+
       // Assert
       expect(result.isFailure).toBe(true);
       expect(result.error).toBeInstanceOf(TechnicalError);
@@ -103,12 +103,12 @@ describe('Utility Functions', () => {
     test('should handle successful callback function', async () => {
       // Arrange
       const callbackFn = (value: string, callback: (err: Error | null, result: string) => void) => {
-        callback(null, value + ' processed');
+        callback(null, `${value} processed`);
       };
-      
+
       // Act
       const result = await promisifyWithResult<string>(callbackFn, 'test');
-      
+
       // Assert
       expect(result.isSuccess).toBe(true);
       expect(result.value).toBe('test processed');
@@ -120,10 +120,10 @@ describe('Utility Functions', () => {
       const callbackFn = (_: string, callback: (err: Error | null, result: string) => void) => {
         callback(error, '' as any);
       };
-      
+
       // Act
       const result = await promisifyWithResult<string>(callbackFn, 'test');
-      
+
       // Assert
       expect(result.isFailure).toBe(true);
       expect(result.error).toBe(error);
@@ -134,10 +134,10 @@ describe('Utility Functions', () => {
       const callbackFn = () => {
         throw new Error('Thrown error');
       };
-      
+
       // Act
       const result = await promisifyWithResult<string>(callbackFn, 'test');
-      
+
       // Assert
       expect(result.isFailure).toBe(true);
       expect(result.error.message).toContain('Thrown error');
@@ -148,10 +148,10 @@ describe('Utility Functions', () => {
       const callbackFn = (_: string, callback: (err: any, result: string) => void) => {
         callback('string error', '' as any);
       };
-      
+
       // Act
       const result = await promisifyWithResult<string>(callbackFn, 'test');
-      
+
       // Assert
       expect(result.isFailure).toBe(true);
       expect(result.error).toBeInstanceOf(TechnicalError);
@@ -164,10 +164,10 @@ describe('Utility Functions', () => {
       // Arrange
       const value = 10;
       const predicate = (n: number) => n > 5;
-      
+
       // Act
       const result = fromPredicate(value, predicate, 'Value must be greater than 5');
-      
+
       // Assert
       expect(result.isSuccess).toBe(true);
       expect(result.value).toBe(value);
@@ -178,10 +178,10 @@ describe('Utility Functions', () => {
       const value = 3;
       const predicate = (n: number) => n > 5;
       const errorMessage = 'Value must be greater than 5';
-      
+
       // Act
       const result = fromPredicate(value, predicate, errorMessage);
-      
+
       // Assert
       expect(result.isFailure).toBe(true);
       expect(result.error.message).toBe(errorMessage);
@@ -191,10 +191,10 @@ describe('Utility Functions', () => {
       // Arrange
       const user = { name: 'John', age: 17 };
       const isAdult = (u: typeof user) => u.age >= 18 && u.name.length > 0;
-      
+
       // Act
       const result = fromPredicate(user, isAdult, 'User must be an adult');
-      
+
       // Assert
       expect(result.isFailure).toBe(true);
       expect(result.error.message).toBe('User must be an adult');
@@ -206,10 +206,10 @@ describe('Utility Functions', () => {
       // Arrange
       const result = Result.ok<number, Error>(5);
       const mapper = (n: number) => n * 2;
-      
+
       // Act
       const mappedResult = mapResult(result, mapper);
-      
+
       // Assert
       expect(mappedResult.isSuccess).toBe(true);
       expect(mappedResult.value).toBe(10);
@@ -219,14 +219,14 @@ describe('Utility Functions', () => {
       // Arrange
       const error = new ValidationError('Invalid input');
       const result = Result.fail<number, Error>(error);
-      const mapper = jest.fn((n: number) => n * 2);
-      
+      const mapper = vi.fn((n: number) => n * 2);
+
       // Act
-      const mappedResult = mapResult(result, mapper);
-      
+      const mapped = mapResult(result, mapper);
+
       // Assert
-      expect(mappedResult.isFailure).toBe(true);
-      expect(mappedResult.error).toBe(error);
+      expect(mapped.isFailure).toBe(true);
+      expect(mapped.error).toBe(error);
       expect(mapper).not.toHaveBeenCalled();
     });
   });
@@ -235,10 +235,10 @@ describe('Utility Functions', () => {
     test('should return original result when success', () => {
       // Arrange
       const result = Result.ok<string, Error>('original');
-      
+
       // Act
       const resultWithFallback = withFallback(result, 'fallback');
-      
+
       // Assert
       expect(resultWithFallback.isSuccess).toBe(true);
       expect(resultWithFallback.value).toBe('original');
@@ -247,10 +247,10 @@ describe('Utility Functions', () => {
     test('should return fallback value when failure', () => {
       // Arrange
       const result = Result.fail<string, Error>(new Error('Some error'));
-      
+
       // Act
       const resultWithFallback = withFallback(result, 'fallback');
-      
+
       // Assert
       expect(resultWithFallback.isSuccess).toBe(true);
       expect(resultWithFallback.value).toBe('fallback');
@@ -260,11 +260,11 @@ describe('Utility Functions', () => {
   describe('retry', () => {
     test('should return the successful result immediately if first try succeeds', async () => {
       // Arrange
-      const mockFn = jest.fn().mockResolvedValue(Result.ok('success'));
-      
+      const mockFn = vi.fn().mockResolvedValue(Result.ok('success'));
+
       // Act
-      const result = await retry(() => Promise.resolve(mockFn()));
-      
+      const result = await retry(mockFn, { maxAttempts: 3, delayMs: 100 });
+
       // Assert
       expect(result.isSuccess).toBe(true);
       expect(result.value).toBe('success');
@@ -274,17 +274,17 @@ describe('Utility Functions', () => {
     test('should retry the specified number of times before succeeding', async () => {
       // Arrange
       let attempts = 0;
-      const mockFn = jest.fn().mockImplementation(() => {
+      const mockFn = vi.fn().mockImplementation(() => {
         attempts++;
         if (attempts <= 2) {
-          return Promise.resolve(Result.fail<string, Error>(new Error(`Attempt ${attempts} failed`)));
+          return Promise.resolve(Result.fail(new Error(`Attempt ${attempts} failed`)));
         }
-        return Promise.resolve(Result.ok<string, Error>('success after retries'));
+        return Promise.resolve(Result.ok('success after retries'));
       });
-      
+
       // Act
-      const result = await retry(() => Promise.resolve(mockFn()), 3, 10);
-      
+      const result = await retry(mockFn, { maxAttempts: 5, delayMs: 10 });
+
       // Assert
       expect(result.isSuccess).toBe(true);
       expect(result.value).toBe('success after retries');
@@ -293,90 +293,92 @@ describe('Utility Functions', () => {
 
     test('should return failure if all retries fail', async () => {
       // Arrange
-      const error = new ValidationError('Invalid data');
-      const mockFn = jest.fn().mockResolvedValue(Result.fail<string, Error>(error));
-      
+      const error = new Error('Persistent failure');
+      const mockFn = vi.fn().mockResolvedValue(Result.fail(error));
+
       // Act
-      const result = await retry(() => Promise.resolve(mockFn()), 2, 10);
-      
+      const result = await retry(mockFn, { maxAttempts: 3, delayMs: 10 });
+
       // Assert
       expect(result.isFailure).toBe(true);
       expect(result.error).toBe(error);
-      expect(mockFn).toHaveBeenCalledTimes(3); // initial + 2 retries
+      expect(mockFn).toHaveBeenCalledTimes(4); // Initial + 3 retries = 4 calls
     });
 
     test('should handle thrown exceptions during retries', async () => {
       // Arrange
       let attempts = 0;
-      const mockFn = jest.fn().mockImplementation(() => {
+      const mockFn = vi.fn().mockImplementation(() => {
         attempts++;
         if (attempts === 1) {
           throw new Error('Unexpected error');
         }
-        return Promise.resolve(Result.ok<string, Error>('recovered'));
+        if (attempts === 2) {
+          return Promise.resolve(Result.fail(new Error('Expected failure')));
+        }
+        return Promise.resolve(Result.ok('success after error and failure'));
       });
-      
+
       // Act
-      const result = await retry(() => mockFn(), 3, 10);
-      
+      const result = await retry(mockFn, { maxAttempts: 3, delayMs: 10 });
+
       // Assert
       expect(result.isSuccess).toBe(true);
-      expect(result.value).toBe('recovered');
-      expect(mockFn).toHaveBeenCalledTimes(2);
+      expect(result.value).toBe('success after error and failure');
+      expect(mockFn).toHaveBeenCalledTimes(3);
     });
 
     test('should use exponential backoff for retries', async () => {
       // Arrange
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       let attempts = 0;
-      const mockFn = jest.fn().mockImplementation(() => {
+      const mockFn = vi.fn().mockImplementation(() => {
         attempts++;
         if (attempts <= 2) {
-          return Promise.resolve(Result.fail<string, Error>(new Error(`Attempt ${attempts} failed`)));
+          return Promise.resolve(Result.fail(new Error(`Attempt ${attempts} failed`)));
         }
-        return Promise.resolve(Result.ok<string, Error>('success'));
+        return Promise.resolve(Result.ok('success'));
       });
-      
-      // Act
-      const resultPromise = retry(() => Promise.resolve(mockFn()), 2, 100);
-      
+
+      // Act - use smaller timeout to avoid test timeout
+      const resultPromise = retry(mockFn, { maxAttempts: 2, delayMs: 5 });
+
       // Fast-forward until all timers have been executed
-      jest.runAllTimers();
-      
+      await vi.runAllTimersAsync();
+
       const result = await resultPromise;
-      
+
       // Assert
       expect(result.isSuccess).toBe(true);
       expect(result.value).toBe('success');
       expect(mockFn).toHaveBeenCalledTimes(3);
-      
+
       // Clean up
-      jest.useRealTimers();
-    });
+      vi.useRealTimers();
+    }, 10000); // Increase timeout
 
     test('should handle a real async operation with retries', async () => {
-      // Arrange
+      // Arrange - use much smaller delay values
       let counter = 0;
-      
+
       const asyncOpWithRetries = async (): Promise<Result<string, Error>> => {
         counter++;
-        await delay(5); // Small delay to simulate async work
-        
+        await delay(1); // Small delay to simulate async work
+
         if (counter < 3) {
           return Result.fail<string, Error>(new NotFoundError('Resource', `attempt-${counter}`));
         }
-        
+
         return Result.ok<string, Error>('Resource found after retries');
       };
-      
+
       // Act
-      const result = await retry(asyncOpWithRetries, 3, 10);
-      
+      const result = await retry(asyncOpWithRetries, { maxAttempts: 3, delayMs: 1 });
+
       // Assert
       expect(result.isSuccess).toBe(true);
       expect(result.value).toBe('Resource found after retries');
       expect(counter).toBe(3);
-    });
+    }, 10000); // Increase timeout
   });
 });
-

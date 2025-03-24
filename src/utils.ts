@@ -1,5 +1,5 @@
-import { Result } from './result.js';
 import { TechnicalError } from './errors.js';
+import { Result } from './result.js';
 
 /**
  * Combines multiple result values into a single result containing an array of values
@@ -45,21 +45,23 @@ export function promisifyWithResult<T>(
   fn: (...args: any[]) => void,
   ...args: any[]
 ): Promise<Result<T, Error>> {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     try {
       fn(...args, (error: any, result: T) => {
         if (error) {
-          resolve(Result.fail<T, Error>(
-            error instanceof Error ? error : new TechnicalError(String(error))
-          ));
+          resolve(
+            Result.fail<T, Error>(
+              error instanceof Error ? error : new TechnicalError(String(error))
+            )
+          );
         } else {
           resolve(Result.ok<T, Error>(result));
         }
       });
     } catch (error) {
-      resolve(Result.fail<T, Error>(
-        error instanceof Error ? error : new TechnicalError(String(error))
-      ));
+      resolve(
+        Result.fail<T, Error>(error instanceof Error ? error : new TechnicalError(String(error)))
+      );
     }
   });
 }
@@ -110,18 +112,18 @@ export function withFallback<T, E extends Error>(
 /**
  * Attempt to execute a function multiple times until it succeeds
  * @param fn Function to retry
- * @param retries Number of retry attempts
- * @param delay Delay between retries in milliseconds
+ * @param options Options for retry behavior
  * @returns Result of the function execution
  */
 export async function retry<T>(
   fn: () => Promise<Result<T, Error>>,
-  retries: number = 3,
-  delay: number = 300
+  options: { maxAttempts?: number; delayMs?: number } = {}
 ): Promise<Result<T, Error>> {
+  const maxAttempts = options.maxAttempts ?? 3;
+  let currentDelay = options.delayMs ?? 300;
   let lastError: Error | undefined;
 
-  for (let attempt = 0; attempt <= retries; attempt++) {
+  for (let attempt = 0; attempt <= maxAttempts; attempt++) {
     try {
       const result = await fn();
       if (result.isSuccess) {
@@ -129,20 +131,18 @@ export async function retry<T>(
       }
       lastError = result.error;
     } catch (error) {
-      lastError = error instanceof Error
-        ? error
-        : new TechnicalError(String(error));
+      lastError = error instanceof Error ? error : new TechnicalError(String(error));
     }
 
-    if (attempt < retries) {
-      await new Promise(resolve => setTimeout(resolve, delay));
+    if (attempt < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, currentDelay));
       // Exponential backoff
-      delay *= 2;
+      const nextDelay = currentDelay * 2;
+      currentDelay = nextDelay;
     }
   }
 
   return Result.fail<T, Error>(
-    lastError || new TechnicalError(`Failed after ${retries} attempts`)
+    lastError || new TechnicalError(`Failed after ${maxAttempts} attempts`)
   );
 }
-

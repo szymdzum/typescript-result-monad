@@ -112,23 +112,22 @@ export class Result<T, E extends Error> {
   public match<U>(onSuccess: (value: T) => U, onFailure: (error: E) => U): U {
     if (this.isSuccess) {
       return onSuccess(this._value as T);
-    } else {
-      return onFailure(this._error as E);
     }
+    return onFailure(this._error as E);
   }
 
   /**
    * Return an alternative value if the result is a failure
    */
   public getOrElse(defaultValue: T): T {
-    return this.isSuccess ? this._value as T : defaultValue;
+    return this.isSuccess ? (this._value as T) : defaultValue;
   }
 
   /**
    * Return a value computed from a function if the result is a failure
    */
   public getOrCall(f: (error: E) => T): T {
-    return this.isSuccess ? this._value as T : f(this._error as E);
+    return this.isSuccess ? (this._value as T) : f(this._error as E);
   }
 
   /**
@@ -147,9 +146,8 @@ export class Result<T, E extends Error> {
   public toPromise(): Promise<T> {
     if (this.isSuccess) {
       return Promise.resolve(this._value as T);
-    } else {
-      return Promise.reject(this._error);
     }
+    return Promise.reject(this._error);
   }
 
   /**
@@ -157,10 +155,10 @@ export class Result<T, E extends Error> {
    */
   public static fromPromise<U>(promise: Promise<U>): Promise<Result<U, Error>> {
     return promise
-      .then(value => Result.ok<U, Error>(value))
-      .catch(error => Result.fail<U, Error>(
-        error instanceof Error ? error : new Error(String(error))
-      ));
+      .then((value) => Result.ok<U, Error>(value))
+      .catch((error) =>
+        Result.fail<U, Error>(error instanceof Error ? error : new Error(String(error)))
+      );
   }
 
   /**
@@ -170,10 +168,7 @@ export class Result<T, E extends Error> {
     try {
       return Result.ok<U, Error>(f());
     } catch (error) {
-      return Result.fail<U, Error>(
-        error instanceof Error ? error : new Error(String(error))
-      );
+      return Result.fail<U, Error>(error instanceof Error ? error : new Error(String(error)));
     }
   }
 }
-

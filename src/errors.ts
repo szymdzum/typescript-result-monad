@@ -12,7 +12,7 @@ export class ResultError extends Error {
 
     // Preserve the original error's stack trace if available
     if (cause?.stack) {
-      this.stack = this.stack + '\nCaused by: ' + cause.stack;
+      this.stack = `${this.stack}\nCaused by: ${cause.stack}`;
     }
 
     Object.setPrototypeOf(this, ResultError.prototype);
@@ -46,7 +46,7 @@ export class NotFoundError extends ResultError {
  * Error for unauthorized operations
  */
 export class UnauthorizedError extends ResultError {
-  constructor(message: string = 'You are not authorized to perform this operation', cause?: Error) {
+  constructor(message = 'You are not authorized to perform this operation', cause?: Error) {
     super(`Unauthorized: ${message}`, cause);
     this.name = 'UnauthorizedError';
     Object.setPrototypeOf(this, UnauthorizedError.prototype);
@@ -97,4 +97,3 @@ export class ConcurrencyError extends ResultError {
     Object.setPrototypeOf(this, ConcurrencyError.prototype);
   }
 }
-
