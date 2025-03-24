@@ -1,5 +1,5 @@
 {
-  "name": "typescript-result-monad",
+  "name": "ts-result-monad",
   "version": "1.0.0",
   "description": "A lightweight, zero-dependency TypeScript implementation of the Result monad pattern for elegant error handling without exceptions.",
   "type": "module",
@@ -49,12 +49,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/szymdzum/typescript-result-monad.git"
+    "url": "git+https://github.com/szymdzum/ts-result-monad.git"
   },
   "bugs": {
-    "url": "https://github.com/szymdzum/typescript-result-monad/issues"
+    "url": "https://github.com/szymdzum/ts-result-monad/issues"
   },
-  "homepage": "https://github.com/szymdzum/typescript-result-monad#readme",
+  "homepage": "https://github.com/szymdzum/ts-result-monad#readme",
   "lint-staged": {
     "*.{js,ts}": [
       "biome check --apply",
