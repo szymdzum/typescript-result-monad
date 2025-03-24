@@ -1,18 +1,27 @@
+import { CancellationError } from './errors.js';
+
 /**
  * A generic result class for handling success and failure outcomes
  * without relying on exceptions for control flow.
+ *
+ * @remarks
+ * When working with recursive structures, be cautious of stack overflow issues
+ * when chaining too many operations. For deeply nested structures, consider
+ * using iterative approaches or limiting recursion depth.
  */
 export class Result<T, E extends Error> {
   public readonly isSuccess: boolean;
   public readonly isFailure: boolean;
   private readonly _value?: T;
   private readonly _error?: E;
+  private readonly _isCancelled: boolean = false;
 
-  private constructor(isSuccess: boolean, error?: E, value?: T) {
+  private constructor(isSuccess: boolean, error?: E, value?: T, isCancelled = false) {
     this.isSuccess = isSuccess;
     this.isFailure = !isSuccess;
     this._value = value;
     this._error = error;
+    this._isCancelled = isCancelled;
 
     // Freeze the object to prevent modification
     Object.freeze(this);
@@ -30,6 +39,27 @@ export class Result<T, E extends Error> {
    */
   public static fail<U, E extends Error>(error: E): Result<U, E> {
     return new Result<U, E>(false, error);
+  }
+
+  /**
+   * Creates a cancelled result to represent an operation that was cancelled
+   * (e.g., due to an AbortController signal or timeout)
+   */
+  public static cancelled<T, E extends Error>(operationId?: string): Result<T, E> {
+    return new Result<T, E>(
+      false,
+      new CancellationError('Operation was cancelled', operationId) as unknown as E,
+      undefined,
+      true
+    );
+  }
+
+  /**
+   * Checks if the result represents a cancelled operation.
+   * Useful for distinguishing between normal failures and cancellations.
+   */
+  public get isCancelled(): boolean {
+    return this._isCancelled;
   }
 
   /**
@@ -153,13 +183,56 @@ export class Result<T, E extends Error> {
   /**
    * Asynchronously maps the result value if successful.
    * Allows transforming the value using a function that returns a Promise.
+   *
+   * @param f - Async function to transform the value
+   * @param abortSignal - Optional AbortSignal to cancel the operation
    */
-  public async asyncMap<U>(f: (value: T) => Promise<U>): Promise<Result<U, E>> {
+  public async asyncMap<U>(
+    f: (value: T) => Promise<U>,
+    abortSignal?: AbortSignal
+  ): Promise<Result<U, E>> {
     if (this.isFailure) {
       return Result.fail<U, E>(this._error as E);
     }
+
     try {
-      const mappedValue = await f(this._value as T);
+      // If the operation is already aborted, return a cancelled result
+      if (abortSignal?.aborted) {
+        return Result.cancelled<U, E>('Operation was aborted');
+      }
+
+      // Create a promise that can be cancelled
+      const resultPromise = f(this._value as T);
+
+      // If the signal is provided, handle cancellation
+      if (abortSignal) {
+        // Create a promise that rejects if the signal is aborted
+        const abortPromise = new Promise<U>((_, reject) => {
+          abortSignal.addEventListener(
+            'abort',
+            () => {
+              reject(new Error('Operation aborted'));
+            },
+            { once: true }
+          );
+        });
+
+        // Race the result promise against the abort promise
+        try {
+          const value = await Promise.race([resultPromise, abortPromise]);
+          return Result.ok<U, E>(value);
+        } catch (error) {
+          if (abortSignal.aborted) {
+            return Result.cancelled<U, E>('Operation was aborted');
+          }
+          return Result.fail<U, E>(
+            error instanceof Error ? (error as E) : (new Error(String(error)) as E)
+          );
+        }
+      }
+
+      // If no signal is provided, just await the result
+      const mappedValue = await resultPromise;
       return Result.ok<U, E>(mappedValue);
     } catch (error) {
       return Result.fail<U, E>(
@@ -171,13 +244,55 @@ export class Result<T, E extends Error> {
   /**
    * Asynchronously chain results together.
    * Allows chaining with a function that returns a Promise<Result>.
+   *
+   * @param f - Async function to transform the value
+   * @param abortSignal - Optional AbortSignal to cancel the operation
    */
-  public async asyncFlatMap<U>(f: (value: T) => Promise<Result<U, E>>): Promise<Result<U, E>> {
+  public async asyncFlatMap<U>(
+    f: (value: T) => Promise<Result<U, E>>,
+    abortSignal?: AbortSignal
+  ): Promise<Result<U, E>> {
     if (this.isFailure) {
       return Result.fail<U, E>(this._error as E);
     }
+
     try {
-      return await f(this._value as T);
+      // If the operation is already aborted, return a cancelled result
+      if (abortSignal?.aborted) {
+        return Result.cancelled<U, E>('Operation was aborted');
+      }
+
+      // Create a promise that can be cancelled
+      const resultPromise = f(this._value as T);
+
+      // If the signal is provided, handle cancellation
+      if (abortSignal) {
+        // Create a promise that rejects if the signal is aborted
+        const abortPromise = new Promise<Result<U, E>>((_, reject) => {
+          abortSignal.addEventListener(
+            'abort',
+            () => {
+              reject(new Error('Operation aborted'));
+            },
+            { once: true }
+          );
+        });
+
+        // Race the result promise against the abort promise
+        try {
+          return await Promise.race([resultPromise, abortPromise]);
+        } catch (error) {
+          if (abortSignal.aborted) {
+            return Result.cancelled<U, E>('Operation was aborted');
+          }
+          return Result.fail<U, E>(
+            error instanceof Error ? (error as E) : (new Error(String(error)) as E)
+          );
+        }
+      }
+
+      // If no signal is provided, just await the result
+      return await resultPromise;
     } catch (error) {
       return Result.fail<U, E>(
         error instanceof Error ? (error as E) : (new Error(String(error)) as E)
@@ -215,14 +330,52 @@ export class Result<T, E extends Error> {
   }
 
   /**
-   * Create a Result from a Promise
+   * Create a Result from a Promise with cancellation support
+   *
+   * @param promise The promise to convert to a Result
+   * @param abortSignal Optional AbortSignal to support cancellation
    */
-  public static fromPromise<U>(promise: Promise<U>): Promise<Result<U, Error>> {
-    return promise
-      .then(value => Result.ok<U, Error>(value))
-      .catch(error =>
-        Result.fail<U, Error>(error instanceof Error ? error : new Error(String(error)))
-      );
+  public static async fromPromise<U>(
+    promise: Promise<U>,
+    abortSignal?: AbortSignal
+  ): Promise<Result<U, Error>> {
+    try {
+      // If already aborted, return a cancelled result
+      if (abortSignal?.aborted) {
+        return Result.cancelled<U, Error>('Operation was aborted');
+      }
+
+      // If an abort signal is provided
+      if (abortSignal) {
+        // Create a promise that rejects when the signal is aborted
+        const abortPromise = new Promise<U>((_, reject) => {
+          abortSignal.addEventListener(
+            'abort',
+            () => {
+              reject(new Error('Operation aborted'));
+            },
+            { once: true }
+          );
+        });
+
+        // Race the original promise with the abort promise
+        try {
+          const result = await Promise.race([promise, abortPromise]);
+          return Result.ok<U, Error>(result);
+        } catch (error) {
+          if (abortSignal.aborted) {
+            return Result.cancelled<U, Error>('Operation was aborted');
+          }
+          return Result.fail<U, Error>(error instanceof Error ? error : new Error(String(error)));
+        }
+      }
+
+      // No abort signal, just handle the promise normally
+      const value = await promise;
+      return Result.ok<U, Error>(value);
+    } catch (error) {
+      return Result.fail<U, Error>(error instanceof Error ? error : new Error(String(error)));
+    }
   }
 
   /**

@@ -45,6 +45,7 @@ export {
   TechnicalError,
   TimeoutError,
   ConcurrencyError,
+  CancellationError,
 } from './errors.js';
 
 // Export all utility functions
@@ -64,5 +65,6 @@ import { Result as ResultClass } from './result.js';
 // Static methods as standalone functions
 export const ok = ResultClass.ok;
 export const fail = ResultClass.fail;
+export const cancelled = ResultClass.cancelled;
 export const fromPromise = ResultClass.fromPromise;
 export const fromThrowable = ResultClass.fromThrowable;
