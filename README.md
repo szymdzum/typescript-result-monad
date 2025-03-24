@@ -548,3 +548,205 @@ const mixedCombined = combineResults(mixedResults);
 console.log('Mixed succeeded?', mixedCombined.isSuccess); // false
 console.log('Error message:', mixedCombined.error.message); // "Second operation failed"
 ```
+
+### Validation API
+
+The library provides a fluent validation API for building type-safe validation rules in a chainable manner. The validation system integrates with the Result monad to provide a consistent error handling approach.
+
+#### Basic Validation
+
+```typescript
+import { validate } from 'ts-result-monad';
+
+interface User {
+  name: string;
+  email: string;
+  age: number;
+}
+
+const user = {
+  name: 'John Doe',
+  email: 'john@example.com',
+  age: 30
+};
+
+const result = validate(user)
+  .property('name', name => name.notEmpty().maxLength(100))
+  .property('email', email => email.notEmpty().email())
+  .property('age', age => age.isNumber().min(18))
+  .validate();
+
+if (result.isSuccess) {
+  console.log('User is valid:', result.value);
+} else {
+  console.log('Validation failed:', result.error.message);
+}
+```
+
+#### Nested Object Validation
+
+```typescript
+const userWithProfile = {
+  name: 'Jane Smith',
+  email: 'jane@example.com',
+  profile: {
+    bio: 'Software developer',
+    website: 'https://example.com'
+  }
+};
+
+const result = validate(userWithProfile)
+  .property('name', name => name.notEmpty())
+  .property('email', email => email.email())
+  .nested('profile', profile =>
+    profile
+      .property('bio', bio => bio.notEmpty())
+      .property('website', website => website.matches(/^https?:\/\//))
+  )
+  .validate();
+```
+
+#### Array Validation
+
+```typescript
+const team = {
+  name: 'Development Team',
+  members: [
+    { name: 'Alice', role: 'Developer' },
+    { name: 'Bob', role: 'Designer' }
+  ]
+};
+
+const result = validate(team)
+  .property('name', name => name.notEmpty())
+  .array('members', member =>
+    member
+      .property('name', name => name.notEmpty())
+      .property('role', role => role.notEmpty())
+  )
+  .validate();
+```
+
+#### Custom Validation Rules
+
+```typescript
+validate(payment)
+  .property('amount', amount =>
+    amount.isNumber().custom(amt => amt > 0, 'Amount must be positive')
+  )
+  .property('currency', currency =>
+    currency.oneOf(['USD', 'EUR', 'GBP'])
+  )
+  .custom(
+    p => p.paymentMethod !== 'credit_card' || p.cardNumber !== undefined,
+    'Card number is required for credit card payments'
+  )
+  .validate();
+```
+
+#### Framework Integrations
+
+The validation API includes built-in integrations with popular frameworks:
+
+##### Express.js Integration
+
+```typescript
+import express from 'express';
+import { validationIntegrations } from 'ts-result-monad';
+
+const app = express();
+app.use(express.json());
+
+// Create a validation middleware
+const validateUser = validationIntegrations.validateBody(body =>
+  body
+    .property('name', name => name.notEmpty())
+    .property('email', email => email.notEmpty().email())
+    .property('age', age => age.isNumber().min(18))
+);
+
+// Use the middleware in your route
+app.post('/users', validateUser, (req, res) => {
+  // If validation passes, the request reaches this handler
+  // Create user logic here
+  res.json({ success: true, message: 'User created' });
+});
+```
+
+##### React Hook Form Integration
+
+```tsx
+import { useForm } from 'react-hook-form';
+import { validationIntegrations } from 'ts-result-monad';
+
+// Define the validation schema
+const validationResolver = validationIntegrations.createHookFormResolver(form =>
+  form
+    .property('name', name => name.notEmpty())
+    .property('email', email => email.email())
+    .property('password', password =>
+      password.notEmpty().minLength(8)
+    )
+);
+
+// Use with React Hook Form
+function SignupForm() {
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: validationResolver
+  });
+
+  const onSubmit = (data) => {
+    // Handle form submission
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register('name')} />
+      {errors.name && <p>{errors.name.message}</p>}
+
+      <input type="email" {...register('email')} />
+      {errors.email && <p>{errors.email.message}</p>}
+
+      <input type="password" {...register('password')} />
+      {errors.password && <p>{errors.password.message}</p>}
+
+      <button type="submit">Sign Up</button>
+    </form>
+  );
+}
+```
+
+##### Third-Party Validation Library Integrations
+
+The API also includes adapters for popular validation libraries:
+
+```typescript
+import { z } from 'zod';
+import { validationIntegrations } from 'ts-result-monad';
+
+// Create a Zod schema
+const userSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  age: z.number().min(18)
+});
+
+// Convert to Result
+const validateUser = validationIntegrations.fromZod(userSchema);
+
+// Validate data
+const result = validateUser(userData);
+
+// Similarly for Yup
+import * as yup from 'yup';
+const yupSchema = yup.object({
+  name: yup.string().required(),
+  email: yup.string().email().required()
+});
+
+const validateWithYup = validationIntegrations.fromYup(yupSchema);
+```
+
+### Why Use Result?
+
+// ... existing code ...
