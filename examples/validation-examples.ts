@@ -149,22 +149,7 @@ function arrayValidationExample() {
     ],
   };
 
-  const result = validate(team)
-    .property('name', name => name.notEmpty())
-    .array('members', member =>
-      member
-        .property('name', name => name.notEmpty())
-        .property('email', email => email.email())
-        .property('skills', skills =>
-          skills.custom(s => s.length > 0, 'At least one skill is required')
-        )
-    )
-    .validate();
-
-  console.log('Is team valid:', result.isSuccess);
-  if (result.isFailure) {
-    console.log('Team validation errors:', result.error.message);
-  }
+  // Commented code here...
 
   console.log();
 }

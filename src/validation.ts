@@ -89,32 +89,33 @@ export class Validator<T> {
    * @param itemValidationFn - A function that applies validation rules to each item
    * @returns This validator instance for chaining
    */
-  public array<K extends keyof T>(
-    propertyName: K,
-    itemValidationFn: (
-      validator: Validator<T[K] extends (infer U)[] ? U : never>
-    ) => Validator<T[K] extends (infer U)[] ? U : never>
+  public array<ItemType>(
+    propertyName: Extract<keyof T, string>,
+    validator: (item: Validator<ItemType>) => Validator<ItemType>
   ): Validator<T> {
-    const array = this._value[propertyName] as unknown as any[];
-    if (!Array.isArray(array)) {
-      this._errors.push(`${String(propertyName)} must be an array`);
+    const property = this._value?.[propertyName];
+
+    if (!property) {
+      this.addError(`Property '${propertyName}' is missing or null`);
+      return this;
+    }
+
+    if (!Array.isArray(property)) {
+      this.addError(`Property '${propertyName}' is not an array`);
       return this;
     }
 
     this._currentPropertyPath.push(String(propertyName));
 
-    array.forEach((item, index) => {
+    property.forEach((item, index) => {
       this._currentPropertyPath.push(`[${index}]`);
       const itemValidator = Validator.for(item);
-      itemValidationFn(itemValidator as any);
-
+      validator(itemValidator as Validator<ItemType>);
       this._errors.push(
-        ...itemValidator._errors.map(error => {
-          const path = [...this._currentPropertyPath].join('.');
-          return error.replace('{path}', path);
-        })
+        ...itemValidator._errors.map(error =>
+          error.replace('{path}', [...this._currentPropertyPath].join('.'))
+        )
       );
-
       this._currentPropertyPath.pop();
     });
 
@@ -472,3 +473,45 @@ export namespace integrations {
     };
   };
 }
+
+// Move to a dedicated examples file or wrap in comments
+/*
+// Example usage - not for direct execution
+export const userLoader = reactRouterIntegrations.createLoader(async (params: any) => {
+  try {
+    // Example only - fetchUser would be provided by your application
+    const user = await fetchUser(params.userId);
+    return Result.ok(user);
+  } catch (error: unknown) {
+    return Result.fail(new Error(`Failed to load user: ${error instanceof Error ? error.message : String(error)}`));
+  }
+});
+*/
+
+// Action with validation example
+// export const createUserAction = reactRouterIntegrations.createAction(
+//   validator =>
+//     validator
+//       .property('name', name => name.notEmpty())
+//       .property('email', email => email.notEmpty().email())
+//       .property('age', age => age.isNumber().min(18)),
+
+//   async validData => {
+//     try {
+//       const newUser = await createUser(validData);
+//       return Result.ok(newUser);
+//     } catch (error) {
+//       return Result.fail(new Error(`Failed to create user: ${error.message}`));
+//     }
+//   }
+// );
+
+// async function fetchUser(userId: string): Promise<any> {
+//   // Implementation
+//   return { id: userId, name: 'User' };
+// }
+
+// async function createUser(userData: any): Promise<any> {
+//   // Implementation
+//   return { ...userData, id: 'new-id' };
+// }
