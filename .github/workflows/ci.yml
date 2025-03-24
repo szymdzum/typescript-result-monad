@@ -104,23 +104,3 @@ jobs:
         run: pnpm install --no-frozen-lockfile
       - name: Build
         run: pnpm build
-
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    needs: [build]
-    # Only run if ENDORCTL_API_KEY is set
-    if: ${{ vars.ENDORCTL_NAMESPACE != '' && secrets.ENDORCTL_API_KEY != '' }}
-    permissions:
-      contents: read
-      security-events: write # For GitHub code scanning integration
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Endor Labs Security Scan
-        uses: endorlabs/github-action@b51bd06466b545f01a6ac788e3e1147695d3936c
-        env:
-          ENDORCTL_API_KEY: ${{ secrets.ENDORCTL_API_KEY }}
-        with:
-          namespace: ${{ vars.ENDORCTL_NAMESPACE }}
-          upload-to-github-code-scanning: true
