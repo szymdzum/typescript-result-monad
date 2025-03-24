@@ -5,16 +5,17 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-TypeDoc-blue.svg)](https://szymdzum.github.io/ts-result-monad/)
 
-A lightweight, zero-dependency TypeScript implementation of the Result monad pattern for elegant error handling without exceptions.
+Zero-dependency TypeScript implementation of the Result monad pattern for elegant error handling without exceptions.
 
-📖 **[Full API documentation is available here](https://szymdzum.github.io/ts-result-monad/)** - Generated with TypeDoc and updated automatically with each release.
+📖 **[Full API documentation is available here](https://szymdzum.github.io/ts-result-monad/)** - by TypeDoc
 
 ## Table of Contents
 
 - [Features](#features)
 - [Installation](#installation)
 - [Documentation](https://szymdzum.github.io/ts-result-monad/)
-- [For Newcomers: Simple Examples](#for-newcomers-simple-examples)
+- [API Reference](./API.md)
+- [For Newcomers: Examples](#for-newcomers-simple-examples)
   - [The Problem: Traditional Error Handling](#the-problem-traditional-error-handling)
   - [The Solution: Using Result](#the-solution-using-result)
   - [Chaining Operations: The Simple Way](#chaining-operations-the-simple-way)
@@ -22,10 +23,6 @@ A lightweight, zero-dependency TypeScript implementation of the Result monad pat
   - [Generic Repository Pattern](#generic-repository-pattern)
   - [Higher-Order Function with Result](#higher-order-function-with-result)
   - [Generic Data Pipeline with Results](#generic-data-pipeline-with-results)
-- [API Reference](#api-reference)
-  - [Result Class](#result-class)
-  - [Utility Functions](#utility-functions)
-  - [Error Types](#error-types)
 - [Detailed Examples](#detailed-examples)
   - [Basic Usage](#basic-usage)
   - [Error Handling Patterns](#error-handling-patterns)
@@ -68,104 +65,7 @@ pnpm add ts-result-monad
 
 ## API Reference
 
-### Result Class
-
-#### Static Methods
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `ok` | `<T, E>(value?: T): Result<T, E>` | Creates a success Result with the given value |
-| `fail` | `<T, E>(error: E): Result<T, E>` | Creates a failure Result with the given error |
-| `fromThrowable` | `<T>(fn: () => T): Result<T, Error>` | Creates a Result from a function that might throw |
-| `fromPromise` | `<T>(promise: Promise<T>): Promise<Result<T, Error>>` | Creates a Result from a Promise |
-
-#### Instance Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `isSuccess` | `boolean` | Whether the Result represents a success |
-| `isFailure` | `boolean` | Whether the Result represents a failure |
-| `value` | `T` | The success value (throws if accessed on a failure) |
-| `error` | `E` | The error value (throws if accessed on a success) |
-
-#### Instance Methods
-
-##### Transformation Methods
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `map` | `<U>(fn: (value: T) => U): Result<U, E>` | Transforms the success value |
-| `mapError` | `<U extends Error>(fn: (error: E) => U): Result<T, U>` | Transforms the error value |
-| `flatMap` | `<U>(fn: (value: T) => Result<U, E>): Result<U, E>` | Chains operations that return Results |
-
-##### Side Effect Methods
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `tap` | `(fn: (value: T) => void): Result<T, E>` | Performs a side effect on success |
-| `tapError` | `(fn: (error: E) => void): Result<T, E>` | Performs a side effect on failure |
-
-##### Access & Recovery Methods
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `match` | `<U>(onSuccess: (value: T) => U, onFailure: (error: E) => U): U` | Pattern matching for both cases |
-| `getOrElse` | `(defaultValue: T): T` | Returns the value or a default |
-| `getOrCall` | `(fn: (error: E) => T): T` | Returns the value or computes one from the error |
-| `recover` | `(fn: (error: E) => Result<T, E>): Result<T, E>` | Attempts to recover from an error |
-
-##### Promise Integration
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `toPromise` | `(): Promise<T>` | Converts the Result to a Promise |
-| `asyncMap` | `<U>(fn: (value: T) => Promise<U>): Promise<Result<U, E>>` | Asynchronously transforms the success value |
-| `asyncFlatMap` | `<U>(fn: (value: T) => Promise<Result<U, E>>): Promise<Result<U, E>>` | Chains async operations that return Results |
-
-##### Serialization
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `toJSON` | `(): { success: boolean; value?: T; error?: { name: string; message: string } }` | Converts the Result to a serializable object |
-
-##### Access & Recovery Methods
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `match` | `<U>(onSuccess: (value: T) => U, onFailure: (error: E) => U): U` | Pattern matching for both cases |
-| `getOrElse` | `(defaultValue: T): T` | Returns the value or a default |
-| `getOrCall` | `(fn: (error: E) => T): T` | Returns the value or computes one from the error |
-| `recover` | `(fn: (error: E) => Result<T, E>): Result<T, E>` | Attempts to recover from an error |
-| `orElse` | `(alternative: Result<T, E>): Result<T, E>` | Returns an alternative Result if this is a failure |
-
-### Utility Functions
-
-#### Result Combinators
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `combineResults` | `<T, E>(results: Result<T, E>[]): Result<T[], E>` | Combines multiple Results into one |
-| `mapResult` | `<T, U, E>(result: Result<T, E>, mapper: (value: T) => U): Result<U, E>` | Maps a result to a different type |
-| `withFallback` | `<T, E>(result: Result<T, E>, fallbackValue: T): Result<T, E>` | Creates a new result with a fallback value |
-
-#### Async Utilities
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `tryCatchAsync` | `<T>(fn: () => Promise<T>): Promise<Result<T, Error>>` | Executes async function and returns Result |
-| `promisifyWithResult` | `<T>(fn: (...args: any[]) => void, ...args: any[]): Promise<Result<T, Error>>` | Converts callback-based functions to Promise-based Results |
-| `retry` | `<T>(fn: () => Promise<Result<T, Error>>, retries?: number, delay?: number): Promise<Result<T, Error>>` | Retries an operation multiple times |
-
-#### Conversion Utilities
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `fromPredicate` | `<T>(value: T, predicate: (value: T) => boolean, errorMessage: string): Result<T, Error>` | Creates a Result based on a condition |
-
-### Error Types
-
-| Error Type | Extends | Purpose |
-|------------|---------|---------|
-| `ResultError` | `Error` | Base error class for all Result errors |
-| `ValidationError` | `ResultError` | For input validation failures |
-| `NotFoundError` | `ResultError` | For resource not found situations |
-| `UnauthorizedError` | `ResultError` | For permission/authorization failures |
-| `BusinessRuleError` | `ResultError` | For business rule violations |
-| `TechnicalError` | `ResultError` | For technical/infrastructure issues |
-| `TimeoutError` | `TechnicalError` | For operation timeouts |
-| `ConcurrencyError` | `ResultError` | For concurrent modification issues |
-| `CancellationError` | `TechnicalError` | For cancelled operations |
+For a complete reference of the Result class, utility functions, and error types, see the [API documentation](./API.md).
 
 ## Detailed Examples
 
