@@ -3,13 +3,25 @@
 [![CI](https://github.com/szymdzum/ts-result-monad/actions/workflows/ci.yml/badge.svg)](https://github.com/szymdzum/ts-result-monad/actions/workflows/ci.yml)
 [![NPM Version](https://img.shields.io/npm/v/ts-result-monad.svg)](https://www.npmjs.com/package/ts-result-monad)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Documentation](https://img.shields.io/badge/docs-TypeDoc-blue.svg)](https://szymdzum.github.io/ts-result-monad/)
 
 A lightweight, zero-dependency TypeScript implementation of the Result monad pattern for elegant error handling without exceptions.
+
+📖 **[Full API documentation is available here](https://szymdzum.github.io/ts-result-monad/)** - Generated with TypeDoc and updated automatically with each release.
 
 ## Table of Contents
 
 - [Features](#features)
 - [Installation](#installation)
+- [Documentation](https://szymdzum.github.io/ts-result-monad/)
+- [For Newcomers: Simple Examples](#for-newcomers-simple-examples)
+  - [The Problem: Traditional Error Handling](#the-problem-traditional-error-handling)
+  - [The Solution: Using Result](#the-solution-using-result)
+  - [Chaining Operations: The Simple Way](#chaining-operations-the-simple-way)
+- [Advanced TypeScript: Complex Generic Examples](#advanced-typescript-complex-generic-examples)
+  - [Generic Repository Pattern](#generic-repository-pattern)
+  - [Higher-Order Function with Result](#higher-order-function-with-result)
+  - [Generic Data Pipeline with Results](#generic-data-pipeline-with-results)
 - [API Reference](#api-reference)
   - [Result Class](#result-class)
   - [Utility Functions](#utility-functions)
@@ -682,4 +694,286 @@ npm install ts-result-monad
 yarn add ts-result-monad
 # or
 pnpm add ts-result-monad
+```
+
+## For Newcomers: Simple Examples
+
+If you're new to the Result monad pattern, here are some simple examples to get you started:
+
+### The Problem: Traditional Error Handling
+
+Here's a simple function that might throw an error:
+
+```typescript
+// Traditional approach with exceptions
+function divide(a: number, b: number): number {
+  if (b === 0) {
+    throw new Error("Cannot divide by zero");
+  }
+  return a / b;
+}
+
+// Using this function requires try/catch
+try {
+  const result = divide(10, 0); // This throws
+  console.log(result);
+} catch (error) {
+  console.error("Error:", error.message);
+}
+```
+
+### The Solution: Using Result
+
+```typescript
+import { Result } from 'ts-result-monad';
+
+// Result-based approach
+function divide(a: number, b: number): Result<number, Error> {
+  if (b === 0) {
+    return Result.fail(new Error("Cannot divide by zero"));
+  }
+  return Result.ok(a / b);
+}
+
+// Using the function with Result
+const result = divide(10, 0);
+
+// Option 1: Check if successful
+if (result.isSuccess) {
+  console.log("Result:", result.value);
+} else {
+  console.error("Error:", result.error.message);
+}
+
+// Option 2: Pattern matching (more concise)
+const message = result.match(
+  value => `The result is ${value}`,
+  error => `Error occurred: ${error.message}`
+);
+console.log(message); // "Error occurred: Cannot divide by zero"
+
+// Option 3: Default value
+const valueOrDefault = result.getOrElse(0);
+console.log("Value or default:", valueOrDefault); // 0
+```
+
+### Chaining Operations: The Simple Way
+
+```typescript
+import { Result } from 'ts-result-monad';
+
+// Parse a number from a string
+function parseNumber(input: string): Result<number, Error> {
+  const num = Number(input);
+  return isNaN(num)
+    ? Result.fail(new Error(`Invalid number: ${input}`))
+    : Result.ok(num);
+}
+
+// Double a number
+function double(x: number): Result<number, Error> {
+  return Result.ok(x * 2);
+}
+
+// Combine operations
+function parseAndDouble(input: string): Result<number, Error> {
+  // Step 1: Parse the string
+  const parseResult = parseNumber(input);
+
+  // Step 2: If parsing succeeded, double the number
+  if (parseResult.isSuccess) {
+    return double(parseResult.value);
+  }
+
+  // Step 3: If parsing failed, return the error
+  return parseResult;
+}
+
+// Much cleaner with flatMap
+function parseAndDoubleClean(input: string): Result<number, Error> {
+  return parseNumber(input)
+    .flatMap(num => double(num));
+}
+
+console.log(parseAndDoubleClean("5").value);       // 10
+console.log(parseAndDoubleClean("abc").isFailure); // true
+```
+
+## Advanced TypeScript: Complex Generic Examples
+
+For more advanced TypeScript users, here are examples that demonstrate complex generic typing scenarios:
+
+### Generic Repository Pattern
+
+```typescript
+import { Result, NotFoundError } from 'ts-result-monad';
+
+// Generic entity interface
+interface Entity {
+  id: string;
+}
+
+// Generic repository using Result
+class Repository<T extends Entity> {
+  private items: T[] = [];
+
+  public add(item: T): Result<T, Error> {
+    const existingItem = this.items.find(i => i.id === item.id);
+
+    if (existingItem) {
+      return Result.fail(new Error(`Item with ID ${item.id} already exists`));
+    }
+
+    this.items.push(item);
+    return Result.ok(item);
+  }
+
+  public findById(id: string): Result<T, NotFoundError> {
+    const item = this.items.find(i => i.id === id);
+
+    return item
+      ? Result.ok(item)
+      : Result.fail(new NotFoundError('Entity', id));
+  }
+
+  public update(item: T): Result<T, NotFoundError> {
+    const index = this.items.findIndex(i => i.id === item.id);
+
+    if (index === -1) {
+      return Result.fail(new NotFoundError('Entity', item.id));
+    }
+
+    this.items[index] = item;
+    return Result.ok(item);
+  }
+}
+
+// Usage with a specific entity type
+interface User extends Entity {
+  id: string;
+  name: string;
+  email: string;
+}
+
+const userRepo = new Repository<User>();
+
+// Add a user
+const addResult = userRepo.add({
+  id: '1',
+  name: 'John',
+  email: 'john@example.com'
+});
+
+// Find a user
+const findResult = userRepo.findById('1');
+
+// Chain operations with proper type safety
+const updateEmailResult = userRepo.findById('1')
+  .flatMap(user => {
+    // TypeScript knows 'user' is a User
+    const updatedUser = { ...user, email: 'john.updated@example.com' };
+    return userRepo.update(updatedUser);
+  });
+```
+
+### Higher-Order Function with Result
+
+```typescript
+import { Result } from 'ts-result-monad';
+
+// Generic higher-order function that wraps a callback to return a Result
+function withResult<T, U, E extends Error>(
+  fn: (input: T) => U,
+  errorHandler: (error: unknown, input: T) => E
+): (input: T) => Result<U, E> {
+  return (input: T): Result<U, E> => {
+    try {
+      const result = fn(input);
+      return Result.ok(result);
+    } catch (error) {
+      return Result.fail(errorHandler(error, input));
+    }
+  };
+}
+
+// Using the higher-order function
+const parseJSON = withResult<string, unknown, Error>(
+  (json) => JSON.parse(json),
+  (error, input) => new Error(`Failed to parse JSON: ${input.substring(0, 10)}...`)
+);
+
+// Usage
+const result1 = parseJSON('{"name": "John"}');
+const result2 = parseJSON('invalid json');
+
+console.log(result1.isSuccess); // true
+console.log(result1.value);     // { name: 'John' }
+console.log(result2.isFailure); // true
+console.log(result2.error.message); // "Failed to parse JSON: invalid js..."
+```
+
+### Generic Data Pipeline with Results
+
+```typescript
+import { Result, ValidationError } from 'ts-result-monad';
+
+// Generic validator type
+type Validator<T> = (value: T) => Result<T, ValidationError>;
+
+// Create a pipeline of validators
+function createValidationPipeline<T>(validators: Validator<T>[]): Validator<T> {
+  return (value: T): Result<T, ValidationError> => {
+    let result: Result<T, ValidationError> = Result.ok(value);
+
+    for (const validator of validators) {
+      // Chain the validators together
+      result = result.flatMap(validator);
+
+      // Short circuit on first failure
+      if (result.isFailure) {
+        break;
+      }
+    }
+
+    return result;
+  };
+}
+
+// Example with User validation
+interface User {
+  id: string;
+  email: string;
+  age: number;
+}
+
+// Validator for non-empty email
+const emailValidator: Validator<User> = (user) => {
+  return user.email && user.email.includes('@')
+    ? Result.ok(user)
+    : Result.fail(new ValidationError('Invalid email format'));
+};
+
+// Validator for age
+const ageValidator: Validator<User> = (user) => {
+  return user.age >= 18
+    ? Result.ok(user)
+    : Result.fail(new ValidationError('User must be 18 or older'));
+};
+
+// Create a combined validator
+const validateUser = createValidationPipeline<User>([
+  emailValidator,
+  ageValidator
+]);
+
+// Usage
+const validUser: User = { id: '1', email: 'john@example.com', age: 25 };
+const invalidUser: User = { id: '2', email: 'invalid-email', age: 16 };
+
+const result1 = validateUser(validUser);
+const result2 = validateUser(invalidUser);
+
+console.log(result1.isSuccess); // true
+console.log(result2.isFailure); // true
+console.log(result2.error.message); // "Invalid email format"
 ```
