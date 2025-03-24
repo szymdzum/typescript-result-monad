@@ -22,7 +22,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.4.1
           run_install: false
       - name: Get pnpm store directory
         shell: bash
@@ -58,7 +58,7 @@ jobs:
           node-version: 20.x
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.4.1
           run_install: false
       - name: Get pnpm store directory
         shell: bash
@@ -87,7 +87,7 @@ jobs:
           node-version: 20.x
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.4.1
           run_install: false
       - name: Get pnpm store directory
         shell: bash
