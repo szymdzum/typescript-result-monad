@@ -1,0 +1,19 @@
+# Default owners for everything in the repo
+# Replace with actual GitHub usernames
+* @szymdzum
+
+# Configuration files
+/.github/ @szymdzum
+/biome.json @szymdzum
+/tsconfig.json @szymdzum
+/vite.config.ts @szymdzum
+/vitest.config.ts @szymdzum
+
+# Source code
+/src/ @szymdzum
+
+# Tests
+/tests/ @szymdzum
+
+# Examples
+/examples/ @szymdzum

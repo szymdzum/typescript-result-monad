@@ -265,9 +265,15 @@ describe('Error cause chaining', () => {
 
     // Check error messages through the chain
     expect(businessError.message).toBe('Business Rule Violation: Cannot process user request');
-    expect((businessError.cause as Error).message).toBe("Not Found: User with id '123' could not be found");
-    expect(((businessError.cause as Error).cause as Error).message).toBe('Technical Error: Database connection failed');
-    expect((((businessError.cause as Error).cause as Error).cause as Error).message).toBe('Network error: connection refused');
+    expect((businessError.cause as Error).message).toBe(
+      "Not Found: User with id '123' could not be found"
+    );
+    expect(((businessError.cause as Error).cause as Error).message).toBe(
+      'Technical Error: Database connection failed'
+    );
+    expect((((businessError.cause as Error).cause as Error).cause as Error).message).toBe(
+      'Network error: connection refused'
+    );
 
     // Stack trace should contain all errors
     expect(businessError.stack).toContain('Cannot process user request');

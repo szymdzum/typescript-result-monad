@@ -6,30 +6,50 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "error",
+        "noUselessFragments": "error",
+        "useSimplifiedLogicExpression": "warn"
+      },
+      "correctness": {
+        "noUnusedVariables": "error",
+        "useExhaustiveDependencies": "error"
+      },
+      "performance": {
+        "noDelete": "error"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "error"
+      },
+      "style": {
+        "noNegationElse": "warn",
+        "useSingleCaseStatement": "warn",
+        "useShorthandAssign": "warn"
+      },
+      "suspicious": {
+        "noConsoleLog": "warn",
+        "noExplicitAny": "off",
+        "noShadowRestrictedNames": "error"
+      }
     },
-    "ignore": [
-      "node_modules",
-      "dist",
-      "coverage"
-    ]
+    "ignore": ["node_modules", "dist", "coverage", "examples/**/*.ts", "tests/**/*.ts"]
   },
   "formatter": {
     "enabled": true,
     "indentWidth": 2,
     "indentStyle": "space",
     "lineWidth": 100,
-    "ignore": [
-      "node_modules",
-      "dist",
-      "coverage"
-    ]
+    "formatWithErrors": false,
+    "ignore": ["node_modules", "dist", "coverage"]
   },
   "javascript": {
     "formatter": {
       "quoteStyle": "single",
       "trailingComma": "es5",
-      "semicolons": "always"
+      "semicolons": "always",
+      "arrowParentheses": "asNeeded",
+      "bracketSpacing": true
     }
   }
 }

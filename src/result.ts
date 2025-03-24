@@ -155,8 +155,8 @@ export class Result<T, E extends Error> {
    */
   public static fromPromise<U>(promise: Promise<U>): Promise<Result<U, Error>> {
     return promise
-      .then((value) => Result.ok<U, Error>(value))
-      .catch((error) =>
+      .then(value => Result.ok<U, Error>(value))
+      .catch(error =>
         Result.fail<U, Error>(error instanceof Error ? error : new Error(String(error)))
       );
   }

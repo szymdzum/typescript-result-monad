@@ -13,7 +13,7 @@ import {
 
 describe('Utility Functions', () => {
   // Helper function to create a delay
-  const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+  const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
   describe('combineResults', () => {
     test('should combine multiple successful results into a single success result', () => {

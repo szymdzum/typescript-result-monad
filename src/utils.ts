@@ -45,7 +45,7 @@ export function promisifyWithResult<T>(
   fn: (...args: any[]) => void,
   ...args: any[]
 ): Promise<Result<T, Error>> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     try {
       fn(...args, (error: any, result: T) => {
         if (error) {
@@ -135,7 +135,7 @@ export async function retry<T>(
     }
 
     if (attempt < maxAttempts) {
-      await new Promise((resolve) => setTimeout(resolve, currentDelay));
+      await new Promise(resolve => setTimeout(resolve, currentDelay));
       // Exponential backoff
       const nextDelay = currentDelay * 2;
       currentDelay = nextDelay;

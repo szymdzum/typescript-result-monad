@@ -1,6 +1,34 @@
 # TypeScript Result Monad
 
+[![CI](https://github.com/szymdzum/typescript-result-monad/actions/workflows/ci.yml/badge.svg)](https://github.com/szymdzum/typescript-result-monad/actions/workflows/ci.yml)
+[![NPM Version](https://img.shields.io/npm/v/typescript-result-monad.svg)](https://www.npmjs.com/package/typescript-result-monad)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A lightweight, zero-dependency TypeScript implementation of the Result monad pattern for elegant error handling without exceptions.
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [API Reference](#api-reference)
+  - [Result Class](#result-class)
+  - [Utility Functions](#utility-functions)
+  - [Error Types](#error-types)
+- [Detailed Examples](#detailed-examples)
+  - [Basic Usage](#basic-usage)
+  - [Error Handling Patterns](#error-handling-patterns)
+  - [Functional Composition](#functional-composition)
+  - [Asynchronous Patterns](#asynchronous-patterns)
+  - [Retry Utilities](#retry-utilities)
+- [Examples](#examples)
+  - [Basic Usage](#basic-usage-1)
+  - [Functional Composition](#functional-composition-1)
+  - [Error Handling & Recovery](#error-handling--recovery)
+  - [Asynchronous Operations](#asynchronous-operations)
+  - [Combining Results](#combining-results)
+  - [Domain-Specific Error Types](#domain-specific-error-types)
+- [Why Use Result?](#why-use-result)
+- [License](#license)
 
 ## Features
 
@@ -14,17 +42,158 @@ A lightweight, zero-dependency TypeScript implementation of the Result monad pat
 
 ```bash
 npm install typescript-result-monad
+# or
+yarn add typescript-result-monad
+# or
+pnpm add typescript-result-monad
 ```
 
-## Basic Usage
+## API Reference
 
-### Importing
+### Result Class
+
+#### Static Methods
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `ok` | `<T, E>(value?: T): Result<T, E>` | Creates a success Result with the given value |
+| `fail` | `<T, E>(error: E): Result<T, E>` | Creates a failure Result with the given error |
+| `fromThrowable` | `<T>(fn: () => T): Result<T, Error>` | Creates a Result from a function that might throw |
+| `fromPromise` | `<T>(promise: Promise<T>): Promise<Result<T, Error>>` | Creates a Result from a Promise |
+
+#### Instance Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `isSuccess` | `boolean` | Whether the Result represents a success |
+| `isFailure` | `boolean` | Whether the Result represents a failure |
+| `value` | `T` | The success value (throws if accessed on a failure) |
+| `error` | `E` | The error value (throws if accessed on a success) |
+
+#### Instance Methods
+
+##### Transformation Methods
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `map` | `<U>(fn: (value: T) => U): Result<U, E>` | Transforms the success value |
+| `mapError` | `<U extends Error>(fn: (error: E) => U): Result<T, U>` | Transforms the error value |
+| `flatMap` | `<U>(fn: (value: T) => Result<U, E>): Result<U, E>` | Chains operations that return Results |
+
+##### Side Effect Methods
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `tap` | `(fn: (value: T) => void): Result<T, E>` | Performs a side effect on success |
+| `tapError` | `(fn: (error: E) => void): Result<T, E>` | Performs a side effect on failure |
+
+##### Access & Recovery Methods
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `match` | `<U>(onSuccess: (value: T) => U, onFailure: (error: E) => U): U` | Pattern matching for both cases |
+| `getOrElse` | `(defaultValue: T): T` | Returns the value or a default |
+| `getOrCall` | `(fn: (error: E) => T): T` | Returns the value or computes one from the error |
+| `recover` | `(fn: (error: E) => Result<T, E>): Result<T, E>` | Attempts to recover from an error |
+
+##### Promise Integration
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `toPromise` | `(): Promise<T>` | Converts the Result to a Promise |
+
+### Utility Functions
+
+#### Result Combinators
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `combineResults` | `<T, E>(results: Result<T, E>[]): Result<T[], E>` | Combines multiple Results into one |
+| `mapResult` | `<T, U, E>(result: Result<T, E>, mapper: (value: T) => U): Result<U, E>` | Maps a result to a different type |
+| `withFallback` | `<T, E>(result: Result<T, E>, fallbackValue: T): Result<T, E>` | Creates a new result with a fallback value |
+
+#### Async Utilities
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `tryCatchAsync` | `<T>(fn: () => Promise<T>): Promise<Result<T, Error>>` | Executes async function and returns Result |
+| `promisifyWithResult` | `<T>(fn: (...args: any[]) => void, ...args: any[]): Promise<Result<T, Error>>` | Converts callback-based functions to Promise-based Results |
+| `retry` | `<T>(fn: () => Promise<Result<T, Error>>, retries?: number, delay?: number): Promise<Result<T, Error>>` | Retries an operation multiple times |
+
+#### Conversion Utilities
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `fromPredicate` | `<T>(value: T, predicate: (value: T) => boolean, errorMessage: string): Result<T, Error>` | Creates a Result based on a condition |
+
+### Error Types
+
+| Error Type | Extends | Purpose |
+|------------|---------|---------|
+| `ResultError` | `Error` | Base error class for all Result errors |
+| `ValidationError` | `ResultError` | For input validation failures |
+| `NotFoundError` | `ResultError` | For resource not found situations |
+| `UnauthorizedError` | `ResultError` | For permission/authorization failures |
+| `BusinessRuleError` | `ResultError` | For business rule violations |
+| `TechnicalError` | `ResultError` | For technical/infrastructure issues |
+| `TimeoutError` | `TechnicalError` | For operation timeouts |
+| `ConcurrencyError` | `ResultError` | For concurrent modification issues |
+
+## Detailed Examples
+
+We've created several example files to demonstrate different patterns and use cases for the Result monad. These examples include comprehensive code with detailed comments to help you understand how to apply these patterns in your own projects.
+
+### [Basic Usage](./examples/basic-usage.ts)
+* Simple success/failure creation
+* Exception handling with `fromThrowable`
+* Chaining operations with `map` and `flatMap`
+* Side effects with `tap` and `tapError`
+* Default values with `getOrElse` and `getOrCall`
+* Promise integration
+
+### [Error Handling Patterns](./examples/error-handling.ts)
+* Domain-specific error types for different scenarios
+* Detailed validation with appropriate error types
+* Business rule validations
+* Error chain propagation
+* Centralized error handling based on error type
+* Error context enrichment
+
+### [Functional Composition](./examples/functional-composition.ts)
+* Data transformation pipelines
+* Multi-step validation with early returns
+* Advanced function composition with shared context
+* Combining multiple Results
+* Parsing and validation examples
+
+### [Asynchronous Patterns](./examples/async-patterns.ts)
+* Converting Promises to Results
+* Chaining async Results
+* Parallel execution with Results
+* Converting callback-based APIs to Result-based
+* Retry patterns with exponential backoff
+* Timeout handling
+
+### [Retry Utilities](./examples/retry.ts)
+* Retrying API calls with transient errors
+* Database connection retries
+* Custom retry settings with file operations
+* Chaining operations after retries
+
+You can run any example directly with:
+
+```bash
+# Using ts-node
+npx ts-node examples/basic-usage.ts
+
+# Or with your TypeScript setup
+npm run build && node dist/examples/basic-usage.js
+```
+
+## Examples
+
+### Basic Usage
+
+#### Importing
 
 ```typescript
 import { Result } from 'typescript-result-monad';
 ```
 
-### Creating Success and Failure Results
+#### Creating Success and Failure Results
 
 ```typescript
 // Creating a success result
@@ -46,7 +215,7 @@ if (failureResult.isFailure) {
 }
 ```
 
-### Handling Operations That Might Throw
+#### Handling Operations That Might Throw
 
 ```typescript
 function divideNumbers(a: number, b: number): number {
@@ -60,10 +229,7 @@ function divideNumbers(a: number, b: number): number {
 const divideResult1 = Result.fromThrowable(() => divideNumbers(10, 2));
 const divideResult2 = Result.fromThrowable(() => divideNumbers(10, 0));
 
-console.log('Division succeeded:', divideResult1.isSuccess); // true
-console.log('Division failed:', divideResult2.isFailure); // true
-
-// Match pattern to handle both cases in a functional way
+// Pattern matching to handle both success and failure cases elegantly
 const resultMessage1 = divideResult1.match(
   value => `Result: ${value}`,
   error => `Error: ${error.message}`
@@ -78,7 +244,9 @@ console.log(resultMessage1); // "Result: 5"
 console.log(resultMessage2); // "Error: Division by zero"
 ```
 
-### Chaining Operations with map and flatMap
+### Functional Composition
+
+#### Chaining Operations with map and flatMap
 
 ```typescript
 // Parse a JSON string into an object
@@ -102,33 +270,43 @@ function processField(field: string): Result<string, Error> {
   return Result.fail(new Error('Field too short'));
 }
 
-// Valid JSON with valid field
+// Chain all operations together in a clean, readable way
 const validProcess = parseJSON('{"name": "John", "age": 30}')
   .flatMap(obj => extractField(obj, 'name'))
   .flatMap(name => processField(name));
 
 console.log('Processed value:', validProcess.value); // "JOHN"
+
+// Error handling is built-in - no need for try/catch
+const invalidJSON = parseJSON('{invalid json}')
+  .flatMap(obj => extractField(obj, 'name'))
+  .flatMap(name => processField(name));
+
+console.log('Is invalid JSON a success?', invalidJSON.isSuccess); // false
 ```
 
-### Working with Side Effects Using tap
+#### Working with Side Effects Using tap
 
 ```typescript
 const result = Result.ok<number, Error>(42)
   .tap(value => {
     console.log('Side effect on success:', value);
-    // Do something with the value, like logging or analytics
+    // Do something with the value without affecting the result chain
+    // Perfect for logging, analytics, etc.
   })
   .tapError(error => {
     console.error('Side effect on error:', error.message);
-    // Handle the error, like logging or reporting
+    // Handle the error without affecting the result chain
+    // Great for error reporting, logging, etc.
   });
 
 // The original result is returned unchanged
-console.log('Result after side effects:', result.isSuccess); // true
 console.log('Result value after side effects:', result.value); // 42
 ```
 
-### Providing Fallback Values
+### Error Handling & Recovery
+
+#### Providing Fallback Values
 
 ```typescript
 const failedResult = Result.fail<number, Error>(new Error('Operation failed'));
@@ -145,51 +323,63 @@ const computedValue = failedResult.getOrCall(error => {
 console.log('Computed fallback value:', computedValue); // -1
 ```
 
-### Working with Promises
+#### Recovering from Errors
+
+```typescript
+const failedOperation = Result.fail<string, Error>(new Error('Network error'));
+
+// Try to recover from the error by providing an alternative result
+const recoveredResult = failedOperation.recover(error => {
+  console.log('Attempting recovery from:', error.message);
+  return Result.ok('Fallback value from cache');
+});
+
+console.log('Recovered successfully:', recoveredResult.isSuccess); // true
+console.log('Recovered value:', recoveredResult.value); // "Fallback value from cache"
+```
+
+### Asynchronous Operations
+
+#### Working with Promises
 
 ```typescript
 // Convert a Promise to a Result
-const promiseResult = await Result.fromPromise(
-  fetch('https://api.example.com/data')
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status}`);
-      }
-      return response.json();
-    })
-);
+async function fetchData() {
+  const promiseResult = await Result.fromPromise(
+    fetch('https://api.example.com/data')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP Error: ${response.status}`);
+        }
+        return response.json();
+      })
+  );
 
-// Handle the Result from the Promise
-promiseResult.match(
-  data => console.log('API data:', data),
-  error => console.error('API Error:', error.message)
-);
+  // Handle the Result from the Promise
+  return promiseResult.match(
+    data => ({ success: true, data }),
+    error => ({ success: false, error: error.message })
+  );
+}
 
 // Convert a Result to a Promise
 const successResult = Result.ok<string, Error>('Hello, world!');
 try {
   const value = await successResult.toPromise();
-  console.log('Promise resolved with:', value);
+  console.log('Promise resolved with:', value); // "Hello, world!"
 } catch (error) {
   console.error('Promise rejected with:', error);
 }
 ```
 
-## Advanced Usage
-
-### Retrying Operations
-
-The `retry` utility allows you to automatically retry operations that might fail due to transient issues:
+#### Retrying Operations
 
 ```typescript
 import { Result, retry, tryCatchAsync } from 'typescript-result-monad';
 
-// Example: Retrying an API call that might experience temporary network issues
+// Fetch data with potential network issues
 async function fetchDataFromAPI(url: string): Promise<Result<any, Error>> {
-  console.log(`Attempting to fetch data from ${url}...`);
-  
   return await tryCatchAsync(async () => {
-    // Your API call logic here
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`HTTP error: ${response.status}`);
@@ -198,31 +388,28 @@ async function fetchDataFromAPI(url: string): Promise<Result<any, Error>> {
   });
 }
 
-// Using retry with default settings (3 retries)
-const apiResult = await retry(() => fetchDataFromAPI('https://api.example.com/data'));
-
-// Using custom retry settings (5 retries with a starting delay of 1000ms)
-const customRetryResult = await retry(
-  () => fetchDataFromAPI('https://api.example.com/data'), 
-  5,  // number of retries
-  1000 // initial delay in ms (doubles after each attempt)
+// Retry with exponential backoff (5 retries, starting with 1s delay)
+const apiResult = await retry(
+  () => fetchDataFromAPI('https://api.example.com/data'),
+  5,    // number of retries
+  1000  // initial delay in ms (doubles after each attempt)
 );
 
-// Handling the result
 if (apiResult.isSuccess) {
-  console.log('API call succeeded:', apiResult.value);
+  console.log('API call succeeded after retries:', apiResult.value);
 } else {
   console.error('API call failed after all retries:', apiResult.error.message);
 }
 ```
 
-### Combining Multiple Results
+### Combining Results
 
-You can combine multiple Result instances into a single Result:
+#### Working with Multiple Operations
 
 ```typescript
 import { Result, combineResults } from 'typescript-result-monad';
 
+// Multiple independent operations
 const results = [
   Result.ok<number, Error>(1),
   Result.ok<number, Error>(2),
@@ -230,16 +417,25 @@ const results = [
 ];
 
 const combined = combineResults(results);
-// If all results are successful, combined.value will be [1, 2, 3]
-// If any result fails, combined will be a failure with the first error
+console.log('All succeeded?', combined.isSuccess); // true
+console.log('Combined values:', combined.value); // [1, 2, 3]
+
+// If any operation fails, the combined result fails
+const mixedResults = [
+  Result.ok<number, Error>(1),
+  Result.fail<number, Error>(new Error('Second operation failed')),
+  Result.ok<number, Error>(3)
+];
+
+const mixedCombined = combineResults(mixedResults);
+console.log('Mixed succeeded?', mixedCombined.isSuccess); // false
+console.log('Error message:', mixedCombined.error.message); // "Second operation failed"
 ```
 
-### Custom Error Types
-
-The library includes several pre-defined error types for common scenarios:
+### Domain-Specific Error Types
 
 ```typescript
-import { 
+import {
   ValidationError,
   NotFoundError,
   UnauthorizedError,
@@ -249,75 +445,43 @@ import {
   ConcurrencyError
 } from 'typescript-result-monad';
 
-// Using custom error types for specific failure cases
+// User validation example
 function validateUser(user: any): Result<any, Error> {
   if (!user.name) {
     return Result.fail(new ValidationError('User name is required'));
   }
-  
+
   if (!user.id) {
     return Result.fail(new NotFoundError('User', user.email));
   }
-  
+
   if (user.role !== 'admin') {
     return Result.fail(new UnauthorizedError('Only admins can perform this action'));
   }
-  
+
   return Result.ok(user);
 }
+
+// Process payment example
+function processPayment(paymentInfo: any): Result<string, Error> {
+  if (paymentInfo.amount <= 0) {
+    return Result.fail(new BusinessRuleError('Payment amount must be positive'));
+  }
+
+  if (!paymentInfo.paymentMethod) {
+    return Result.fail(new ValidationError('Payment method is required'));
+  }
+
+  // Simulate payment processing
+  try {
+    // Success case
+    return Result.ok('Transaction ID: ' + Math.random().toString(36).substring(2, 15));
+  } catch (e) {
+    // Different error types based on the failure reason
+    return Result.fail(new TechnicalError('Payment gateway connection failed', e as Error));
+  }
+}
 ```
-
-## API Reference
-
-### Result Class
-
-#### Static Methods
-
-- `ok<T, E>(value?: T): Result<T, E>` - Creates a success Result with the given value
-- `fail<T, E>(error: E): Result<T, E>` - Creates a failure Result with the given error
-- `fromThrowable<T>(fn: () => T): Result<T, Error>` - Creates a Result from a function that might throw
-- `fromPromise<T>(promise: Promise<T>): Promise<Result<T, Error>>` - Creates a Result from a Promise
-
-#### Instance Properties
-
-- `isSuccess: boolean` - Whether the Result represents a success
-- `isFailure: boolean` - Whether the Result represents a failure
-- `value: T` - The success value (throws if accessed on a failure)
-- `error: E` - The error value (throws if accessed on a success)
-
-#### Instance Methods
-
-- `map<U>(fn: (value: T) => U): Result<U, E>` - Transforms the success value
-- `mapError<U extends Error>(fn: (error: E) => U): Result<T, U>` - Transforms the error value
-- `flatMap<U>(fn: (value: T) => Result<U, E>): Result<U, E>` - Chains operations that return Results
-- `tap(fn: (value: T) => void): Result<T, E>` - Performs a side effect on success
-- `tapError(fn: (error: E) => void): Result<T, E>` - Performs a side effect on failure
-- `match<U>(onSuccess: (value: T) => U, onFailure: (error: E) => U): U` - Pattern matching for both cases
-- `getOrElse(defaultValue: T): T` - Returns the value or a default
-- `getOrCall(fn: (error: E) => T): T` - Returns the value or computes one from the error
-- `recover(fn: (error: E) => Result<T, E>): Result<T, E>` - Attempts to recover from an error
-- `toPromise(): Promise<T>` - Converts the Result to a Promise
-
-### Utility Functions
-
-- `combineResults<T, E>(results: Result<T, E>[]): Result<T[], E>` - Combines multiple Results into one
-- `tryCatchAsync<T>(fn: () => Promise<T>): Promise<Result<T, Error>>` - Executes async function and returns Result
-- `promisifyWithResult<T>(fn: (...args: any[]) => void, ...args: any[]): Promise<Result<T, Error>>` - Converts callback-based functions to Promise<Result>
-- `fromPredicate<T>(value: T, predicate: (value: T) => boolean, errorMessage: string): Result<T, Error>` - Creates a Result based on a condition
-- `mapResult<T, U, E>(result: Result<T, E>, mapper: (value: T) => U): Result<U, E>` - Maps a result to a different type
-- `withFallback<T, E>(result: Result<T, E>, fallbackValue: T): Result<T, E>` - Creates a new result with a fallback value
-- `retry<T>(fn: () => Promise<Result<T, Error>>, retries?: number, delay?: number): Promise<Result<T, Error>>` - Retries an operation multiple times
-
-### Error Types
-
-- `ResultError` - Base error class for all Result errors
-- `ValidationError` - For input validation failures
-- `NotFoundError` - For resource not found situations
-- `UnauthorizedError` - For permission/authorization failures
-- `BusinessRuleError` - For business rule violations
-- `TechnicalError` - For technical/infrastructure issues
-- `TimeoutError` - For operation timeouts
-- `ConcurrencyError` - For concurrent modification issues
 
 ## Why Use Result?
 
@@ -339,4 +503,3 @@ function validateUser(user: any): Result<any, Error> {
 ## License
 
 MIT
-

@@ -53,7 +53,7 @@ describe('Result', () => {
   describe('map', () => {
     test('should map success value', () => {
       const result = Result.ok<number, Error>(42);
-      const mapped = result.map((x) => x * 2);
+      const mapped = result.map(x => x * 2);
 
       expect(mapped.isSuccess).toBe(true);
       expect(mapped.value).toBe(84);
@@ -62,7 +62,7 @@ describe('Result', () => {
     test('should not map failure', () => {
       const error = new Error('Something went wrong');
       const result = Result.fail<number, Error>(error);
-      const mapped = result.map((x) => x * 2);
+      const mapped = result.map(x => x * 2);
 
       expect(mapped.isFailure).toBe(true);
       expect(mapped.error).toBe(error);
@@ -72,7 +72,7 @@ describe('Result', () => {
   describe('mapError', () => {
     test('should not map error for success', () => {
       const result = Result.ok<number, Error>(42);
-      const mapped = result.mapError((e) => new TypeError(e.message));
+      const mapped = result.mapError(e => new TypeError(e.message));
 
       expect(mapped.isSuccess).toBe(true);
       expect(mapped.value).toBe(42);
@@ -81,7 +81,7 @@ describe('Result', () => {
     test('should map error for failure', () => {
       const error = new Error('Something went wrong');
       const result = Result.fail<number, Error>(error);
-      const mapped = result.mapError((e) => new TypeError(`Typed error: ${e.message}`));
+      const mapped = result.mapError(e => new TypeError(`Typed error: ${e.message}`));
 
       expect(mapped.isFailure).toBe(true);
       expect(mapped.error).toBeInstanceOf(TypeError);
@@ -92,7 +92,7 @@ describe('Result', () => {
   describe('flatMap', () => {
     test('should flatMap success', () => {
       const result = Result.ok<number, Error>(42);
-      const flatMapped = result.flatMap((x) => Result.ok<string, Error>(`Value: ${x}`));
+      const flatMapped = result.flatMap(x => Result.ok<string, Error>(`Value: ${x}`));
 
       expect(flatMapped.isSuccess).toBe(true);
       expect(flatMapped.value).toBe('Value: 42');
@@ -101,7 +101,7 @@ describe('Result', () => {
     test('should not flatMap failure', () => {
       const error = new Error('Something went wrong');
       const result = Result.fail<number, Error>(error);
-      const flatMapped = result.flatMap((x) => Result.ok<string, Error>(`Value: ${x}`));
+      const flatMapped = result.flatMap(x => Result.ok<string, Error>(`Value: ${x}`));
 
       expect(flatMapped.isFailure).toBe(true);
       expect(flatMapped.error).toBe(error);
@@ -109,7 +109,7 @@ describe('Result', () => {
 
     test('should propagate failure from flatMapped function', () => {
       const result = Result.ok<number, Error>(42);
-      const flatMapped = result.flatMap((x) =>
+      const flatMapped = result.flatMap(x =>
         Result.fail<string, Error>(new Error(`Error with value: ${x}`))
       );
 
@@ -137,22 +137,22 @@ describe('Result', () => {
       };
 
       const validProcess = parseJSON('{"name": "John", "age": 30}')
-        .flatMap((obj) => extractField(obj, 'name'))
-        .flatMap((name) => processField(name));
+        .flatMap(obj => extractField(obj, 'name'))
+        .flatMap(name => processField(name));
 
       expect(validProcess.isSuccess).toBe(true);
       expect(validProcess.value).toBe('JOHN');
 
       const missingFieldProcess = parseJSON('{"age": 30}')
-        .flatMap((obj) => extractField(obj, 'name'))
-        .flatMap((name) => processField(name));
+        .flatMap(obj => extractField(obj, 'name'))
+        .flatMap(name => processField(name));
 
       expect(missingFieldProcess.isFailure).toBe(true);
       expect(missingFieldProcess.error.message).toBe("Field 'name' not found");
 
       const invalidJsonProcess = parseJSON('{not valid json}')
-        .flatMap((obj) => extractField(obj, 'name'))
-        .flatMap((name) => processField(name));
+        .flatMap(obj => extractField(obj, 'name'))
+        .flatMap(name => processField(name));
 
       expect(invalidJsonProcess.isFailure).toBe(true);
       expect(invalidJsonProcess.error).toBeInstanceOf(Error);
@@ -202,7 +202,7 @@ describe('Result', () => {
       const successMock = vi.fn();
       const errorMock = vi.fn();
 
-      const result = Result.ok<number, Error>(42).tap(successMock).tapError(errorMock);
+      const _result = Result.ok<number, Error>(42).tap(successMock).tapError(errorMock);
 
       expect(successMock).toHaveBeenCalledWith(42);
       expect(errorMock).not.toHaveBeenCalled();
@@ -213,8 +213,8 @@ describe('Result', () => {
     test('should call onSuccess for success', () => {
       const result = Result.ok<number, Error>(42);
       const matchResult = result.match(
-        (value) => `Success: ${value}`,
-        (error) => `Error: ${error.message}`
+        value => `Success: ${value}`,
+        error => `Error: ${error.message}`
       );
 
       expect(matchResult).toBe('Success: 42');
@@ -224,8 +224,8 @@ describe('Result', () => {
       const error = new Error('Something went wrong');
       const result = Result.fail<number, Error>(error);
       const matchResult = result.match(
-        (value) => `Success: ${value}`,
-        (error) => `Error: ${error.message}`
+        value => `Success: ${value}`,
+        error => `Error: ${error.message}`
       );
 
       expect(matchResult).toBe('Error: Something went wrong');
@@ -254,7 +254,7 @@ describe('Result', () => {
 
     test('getOrCall should call function for failure', () => {
       const error = new Error('Something went wrong');
-      const mockFn = vi.fn((error) => error.message.length);
+      const mockFn = vi.fn(error => error.message.length);
       const result = Result.fail<number, Error>(error);
 
       expect(result.getOrCall(mockFn)).toBe(20); // "Something went wrong".length
